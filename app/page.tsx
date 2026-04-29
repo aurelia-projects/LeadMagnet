@@ -104,6 +104,15 @@ export default function Home() {
           </div>
         )}
 
+        {error?.includes('Apify') && (
+          <div className="apify-prompt">
+            <p>🚀 Run directly on Apify:</p>
+            <a href="https://apify.com/zakbuildsai/LeadMagnet" target="_blank" className="apify-btn">
+              Open LeadMagnet on Apify →
+            </a>
+          </div>
+        )}
+
         {results.length > 0 && (
           <div className="results-section">
             <div className="results-header">

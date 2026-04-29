@@ -221,6 +221,33 @@ tbody td {
   color: #64748b;
 }
 
+.apify-prompt {
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
+.apify-prompt p {
+  color: #64748b;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.apify-btn {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  background: #1a73e8;
+  color: white;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.apify-btn:hover {
+  background: #1557b0;
+}
+
 .footer-watermark {
   text-align: center;
   font-size: 0.75rem;

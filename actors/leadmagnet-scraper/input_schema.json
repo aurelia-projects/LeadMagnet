@@ -1,0 +1,40 @@
+{
+  "title": "LeadMagnet Input",
+  "description": "Configure what business leads to scrape",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "query": {
+      "title": "Business Type",
+      "type": "string",
+      "description": "What kind of business? Example: dentists, plumbers, restaurants, real estate agents",
+      "editor": "textfield",
+      "prefill": "dentists"
+    },
+    "location": {
+      "title": "Location",
+      "type": "string",
+      "description": "Where to search? Example: Austin TX, London UK, New York",
+      "editor": "textfield",
+      "prefill": "Austin, TX"
+    },
+    "maxResults": {
+      "title": "Max Results",
+      "type": "integer",
+      "description": "Maximum number of leads to collect (1-100)",
+      "editor": "number",
+      "prefill": 20,
+      "default": 20,
+      "minimum": 1,
+      "maximum": 100
+    },
+    "extractEmails": {
+      "title": "Extract Emails",
+      "type": "boolean",
+      "description": "Visit each business website to find email addresses (slower but more data)",
+      "editor": "checkbox",
+      "default": true
+    }
+  },
+  "required": ["query"]
+}

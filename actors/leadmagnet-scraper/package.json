@@ -1,0 +1,11 @@
+{
+  "name": "leadmagnet-scraper",
+  "version": "0.1.0",
+  "description": "LeadMagnet Apify Actor — Google Maps Business Scraper",
+  "main": "src/main.js",
+  "type": "module",
+  "dependencies": {
+    "apify": "^3.0.0",
+    "playwright": "^1.38.0"
+  }
+}

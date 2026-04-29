@@ -134,7 +134,79 @@ export default function Home() {
     }
 
     drawGlobe(0);
-    return () => cancelAnimationFrame(animId);
+
+    // Counter animation
+    const counterInterval = setInterval(() => {
+      const citiesEl = document.getElementById('g-cities');
+      const leadsEl = document.getElementById('g-leads');
+      if (citiesEl) {
+        const current = parseInt(citiesEl.textContent || '0');
+        if (current < 47) citiesEl.textContent = String(current + 1);
+      }
+      if (leadsEl) {
+        const current = parseInt(leadsEl.textContent || '0');
+        if (current < 892) leadsEl.textContent = String(current + Math.floor(Math.random() * 5) + 1);
+      }
+    }, 200);
+
+    // Live text rotation
+    const liveSearches = [
+      'Scanning Austin, TX — dentist — 100 results',
+      'Scanning London, UK — plumber — 97 results',
+      'Scanning Tokyo, JP — gym — 100 results',
+      'Scanning Dubai — real estate — 88 results',
+      'Scanning São Paulo — restaurant — 100 results',
+      'Scanning Berlin — agency — 94 results',
+      'Scanning Singapore — tech startup — 91 results',
+      'Scanning Toronto — contractor — 96 results',
+    ];
+    let scanIdx = 0;
+    const textInterval = setInterval(() => {
+      const el = document.getElementById('live-text');
+      if (el) {
+        scanIdx = (scanIdx + 1) % liveSearches.length;
+        el.textContent = liveSearches[scanIdx];
+      }
+    }, 4000);
+
+    // Live feed items
+    const feedCities = [
+      { city: 'Singapore', count: 91, type: 'startup' },
+      { city: 'London', count: 97, type: 'plumber' },
+      { city: 'Tokyo', count: 100, type: 'gym' },
+      { city: 'Dubai', count: 88, type: 'real estate' },
+      { city: 'São Paulo', count: 100, type: 'restaurant' },
+      { city: 'Berlin', count: 94, type: 'agency' },
+      { city: 'Los Angeles', count: 82, type: 'contractor' },
+      { city: 'Sydney', count: 96, type: 'electrician' },
+      { city: 'Austin', count: 100, type: 'dentist' },
+      { city: 'Chicago', count: 91, type: 'plumber' },
+      { city: 'Paris', count: 73, type: 'cafe' },
+      { city: 'Seoul', count: 68, type: 'tech' },
+    ];
+
+    function addFeedItem() {
+      const feed = document.getElementById('live-feed');
+      if (!feed) return;
+      const item = feedCities[Math.floor(Math.random() * feedCities.length)];
+      const div = document.createElement('div');
+      div.className = 'feed-item';
+      div.innerHTML = `<div class="feed-city">${item.city}</div><div class="feed-count">${item.count} leads</div><div class="feed-type">· ${item.type}</div>`;
+      feed.appendChild(div);
+      if (feed.children.length > 6) feed.removeChild(feed.firstChild!);
+      setTimeout(() => { if (div.parentNode) div.style.opacity = '0.5'; }, 5000);
+    }
+
+    const feedInterval = setInterval(addFeedItem, 3000);
+    // Add initial items
+    for (let i = 0; i < 4; i++) setTimeout(addFeedItem, i * 400);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      clearInterval(counterInterval);
+      clearInterval(textInterval);
+      clearInterval(feedInterval);
+    };
   }, []);
 
   async function handleSearch(e: React.FormEvent) {
@@ -301,17 +373,35 @@ export default function Home() {
             <h2 className="globe-title">Scan any city.<br /><span className="gradient-text">Any market.<br />Anywhere.</span></h2>
             <p className="globe-sub">LeadMagnet works on every Google Maps market worldwide. Drop a city, a neighborhood, a country — real businesses, real contacts.</p>
             <div className="globe-stats">
-              <div className="gstat"><div className="gstat-num">190+</div><div className="gstat-label">Countries supported</div></div>
-              <div className="gstat"><div className="gstat-num">&lt;3min</div><div className="gstat-label">Avg. run time</div></div>
+              <div className="gstat">
+                <div className="gstat-num" id="g-cities">0</div>
+                <div className="gstat-label">Cities scanned today</div>
+              </div>
+              <div className="gstat">
+                <div className="gstat-num" id="g-leads">0</div>
+                <div className="gstat-label">Leads extracted</div>
+              </div>
+              <div className="gstat">
+                <div className="gstat-num">190+</div>
+                <div className="gstat-label">Countries supported</div>
+              </div>
+              <div className="gstat">
+                <div className="gstat-num">&lt;3min</div>
+                <div className="gstat-label">Avg. run time</div>
+              </div>
             </div>
-            <div className="globe-live"><div className="live-dot"></div><span>Scanning Austin, TX — dentist — 100 results</span></div>
+            <div className="globe-live">
+              <div className="live-dot"></div>
+              <span id="live-text">Scanning Austin, TX — dentist — 100 results</span>
+            </div>
           </div>
           <div className="globe-canvas-wrap reveal">
             <div className="globe-ring" style={{width: 520, height: 520}}></div>
             <div className="globe-ring" style={{width: 520, height: 520}}></div>
             <div className="globe-ring" style={{width: 520, height: 520}}></div>
             <canvas id="globeCanvas" width={460} height={460}></canvas>
-            <div className="scan-label">● SCANNING GLOBAL MARKETS</div>
+            <div className="scan-label" id="scan-label">● SCANNING GLOBAL MARKETS</div>
+            <div className="live-feed" id="live-feed"></div>
           </div>
         </div>
       </section>

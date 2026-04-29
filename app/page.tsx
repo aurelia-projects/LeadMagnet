@@ -466,7 +466,25 @@ export default function Home() {
                   setTimeout(() => btn.textContent = 'Copy', 2000);
                 }}>Copy</button>
               </div>
-              <pre className="code-body">import { ApifyClient } from 'apify-client';\n\nconst client = new ApifyClient({\n  token: 'YOUR_APIFY_TOKEN',\n});\n\nconst run = await client.actor('zakbuildsai/LeadMagnet').call({\n  query: 'dentist',\n  location: 'Austin, TX',\n  maxResults: 100,\n});\n\nconst { items } = await client\n  .dataset(run.defaultDatasetId)\n  .listItems();\n\nitems.forEach(lead => {\n  console.log(lead.name, lead.email);\n});</pre>
+              <pre className="code-body">{`import { ApifyClient } from 'apify-client';
+
+const client = new ApifyClient({
+  token: 'YOUR_APIFY_TOKEN',
+});
+
+const run = await client.actor('zakbuildsai/LeadMagnet').call({
+  query: 'dentist',
+  location: 'Austin, TX',
+  maxResults: 100,
+});
+
+const { items } = await client
+  .dataset(run.defaultDatasetId)
+  .listItems();
+
+items.forEach(lead => {
+  console.log(lead.name, lead.email);
+});`}</pre>
             </div>
           </div>
         </div>

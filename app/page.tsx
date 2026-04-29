@@ -219,7 +219,7 @@ export default function Home() {
   }
 
   return (
-    <>
+    <main>
       {/* NAV */}
       <nav>
         <div className="nav-logo">
@@ -602,4 +602,14 @@ items.forEach(lead => {
 
       {/* FOOTER */}
       <footer>
-        <div className="footer-brand"><div className="logo-icon" style={{width: 28, height: 28, fontSize: 12}}>⚡</div> Lead<span className="logo
+        <div className="footer-brand"><div className="logo-icon" style={{width: 28, height: 28, fontSize: 12}}>⚡</div> Lead<span className="logo-dot">Magnet</span></div>
+        <div className="footer-links">
+          <a href="#how">Docs</a>
+          <a href="#dev">API</a>
+          <a href="https://apify.com/zakbuildsai/LeadMagnet">Apify</a>
+        </div>
+        <div className="footer-copy">Built on Apify · Powered by Playwright</div>
+      </footer>
+    </main>
+  );
+}

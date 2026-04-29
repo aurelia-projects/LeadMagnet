@@ -1,20 +1,20 @@
 {
   "title": "LeadMagnet Input",
-  "description": "Configure what business leads to scrape",
+  "description": "Configure what business leads to scrape from Google Maps",
   "type": "object",
   "schemaVersion": 1,
   "properties": {
     "query": {
       "title": "Business Type",
       "type": "string",
-      "description": "What kind of business? Example: dentists, plumbers, restaurants, real estate agents",
+      "description": "What kind of business? Examples: dentist, plumber, restaurant, real estate agent",
       "editor": "textfield",
-      "prefill": "dentists"
+      "prefill": "dentist"
     },
     "location": {
       "title": "Location",
       "type": "string",
-      "description": "Where to search? Example: Austin TX, London UK, New York",
+      "description": "Where to search? Examples: Austin TX, London UK, New York NY",
       "editor": "textfield",
       "prefill": "Austin, TX"
     },
@@ -32,6 +32,13 @@
       "title": "Extract Emails",
       "type": "boolean",
       "description": "Visit each business website to find email addresses (slower but more data)",
+      "editor": "checkbox",
+      "default": true
+    },
+    "includeOpeningHours": {
+      "title": "Include Opening Hours",
+      "type": "boolean",
+      "description": "Extract business opening hours from Google Maps",
       "editor": "checkbox",
       "default": true
     }

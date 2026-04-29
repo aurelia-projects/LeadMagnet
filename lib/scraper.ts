@@ -22,6 +22,14 @@ export interface Lead {
   reviews: string;
   latitude: number;
   longitude: number;
+  openingHours: string[];
+  priceRange: string;
+  placeId: string;
+  socialProfiles: {
+    instagram: string;
+    facebook: string;
+    twitter: string;
+  };
   scrapedAt: string;
 }
 
@@ -29,17 +37,11 @@ interface ScrapeOptions {
   maxResults?: number;
   maxScrolls?: number;
   includeEmail?: boolean;
+  includeReviews?: boolean;
+  includeOpeningHours?: boolean;
   timeout?: number;
 }
 
-/**
- * Scrape business leads from Google Maps
- * 
- * @param query - Business type (e.g., "dentists")
- * @param location - Location (e.g., "Kuala Lumpur")
- * @param options - Optional settings
- * @returns Array of enriched business leads
- */
 export async function scrapeLeads(
   query: string,
   location: string = '',
@@ -49,6 +51,8 @@ export async function scrapeLeads(
     maxResults = 100,
     maxScrolls = 8,
     includeEmail = true,
+    includeReviews = false,
+    includeOpeningHours = true,
     timeout = 45000
   } = options;
 
@@ -58,8 +62,6 @@ export async function scrapeLeads(
 
   try {
     const page = await browser.newPage();
-    
-    // Set realistic headers to avoid detection
     await page.setExtraHTTPHeaders({
       'Accept-Language': 'en-US,en;q=0.9',
     });
@@ -82,10 +84,14 @@ export async function scrapeLeads(
         reviews: biz.reviews || '',
         latitude: biz.lat || 0,
         longitude: biz.lng || 0,
+        openingHours: biz.openingHours || [],
+        priceRange: biz.priceRange || '',
+        placeId: biz.placeId || '',
+        socialProfiles: biz.socialProfiles || { instagram: '', facebook: '', twitter: '' },
         scrapedAt: new Date().toISOString(),
       };
 
-      // Enrich: extract email from website if available
+      // Extract email from website
       if (includeEmail && lead.website) {
         lead.email = await extractEmail(page, lead.website) || '';
       }
@@ -103,37 +109,28 @@ export async function scrapeLeads(
   return leads;
 }
 
-// ============ PRIVATE HELPERS ============
+// ============ BROWSER ============
 
 async function launchBrowser(): Promise<Browser> {
   return chromium.launch({
     headless: true,
     args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--single-process',
+      '--no-sandbox', '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage', '--disable-gpu', '--single-process',
     ],
   });
 }
 
 async function navigateToMaps(page: Page, query: string) {
   const url = `https://www.google.com/maps/search/${encodeURIComponent(query)}/`;
-  await page.goto(url, { 
-    waitUntil: 'domcontentloaded',
-    timeout: 30000 
-  });
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 }
 
 async function waitForResults(page: Page, timeout: number) {
-  // Wait for either the feed or any result card to appear
   await Promise.race([
     page.waitForSelector('[role="feed"]', { timeout: 15000 }).catch(() => {}),
     page.waitForSelector('.Nv2PK', { timeout: 15000 }).catch(() => {}),
-    page.waitForFunction(() => {
-      return document.querySelectorAll('[role="article"]').length > 0;
-    }, { timeout: 15000 }).catch(() => {}),
+    page.waitForFunction(() => document.querySelectorAll('[role="article"]').length > 0, { timeout: 15000 }).catch(() => {}),
   ]);
 }
 
@@ -143,33 +140,25 @@ async function scrollToLoad(page: Page, maxScrolls: number) {
       const feed = document.querySelector('[role="feed"]');
       return feed ? feed.scrollHeight : 0;
     });
-
     await page.evaluate(() => {
       const feed = document.querySelector('[role="feed"]');
-      if (feed) {
-        feed.scrollBy(0, feed.scrollHeight);
-      }
+      if (feed) feed.scrollBy(0, feed.scrollHeight);
     });
-
-    // Wait for new results to load
     await page.waitForTimeout(2500);
-
     const newHeight = await page.evaluate(() => {
       const feed = document.querySelector('[role="feed"]');
       return feed ? feed.scrollHeight : 0;
     });
-
-    if (newHeight <= previousHeight) {
-      break; // No more results loading
-    }
+    if (newHeight <= previousHeight) break;
   }
 }
+
+// ============ EXTRACTION ============
 
 async function extractBusinesses(page: Page): Promise<any[]> {
   return page.evaluate(() => {
     const items: any[] = [];
-    
-    // Try multiple selectors for robustness
+
     const selectors = [
       '[role="feed"] > div > div[jsaction]',
       '.Nv2PK',
@@ -186,12 +175,29 @@ async function extractBusinesses(page: Page): Promise<any[]> {
     cards.forEach(card => {
       const nameEl = card.querySelector('.fontHeadlineSmall, .qBF1Pd, h3, .lI9IFe');
       const categoryEl = card.querySelector('.fontBodyMedium .Ahnjwc, .W4Efsd');
-      const addressEl = card.querySelector('[data-item-id="address"], .W4Efsd + .W4Efsd');
+      const addressEl = card.querySelector('[data-item-id="address"]');
       const phoneEl = card.querySelector('[data-item-id*="phone"]');
       const websiteEl = card.querySelector('[data-item-id*="website"], a[href*="website"]');
       const ratingEl = card.querySelector('.MW4etd, span[aria-label*="stars"]');
       const reviewsEl = card.querySelector('.UY7F9, span[aria-label*="review"]');
       const coordsEl = card.querySelector('[data-lat]');
+      const priceEl = card.querySelector('[aria-label*="Price"]');
+      const placeIdEl = card.querySelector('[data-place-id]');
+
+      // Opening hours — the status text shows operating hours
+      const hours: string[] = [];
+      const statusEl = card.querySelector('.W4Efsd, .ZDu9vd, .A1pRfd');
+      if (statusEl) {
+        const statusText = statusEl.textContent?.trim();
+        if (statusText && (statusText.includes('Open') || statusText.includes('Closed') || statusText.includes('Closes'))) {
+          hours.push(statusText);
+        }
+      }
+
+      // Social profiles
+      const instaEl = card.querySelector('a[href*="instagram.com"]');
+      const fbEl = card.querySelector('a[href*="facebook.com"]');
+      const twEl = card.querySelector('a[href*="twitter.com"], a[href*="x.com"]');
 
       const name = nameEl?.textContent?.trim();
       if (name && !items.find(i => i.name === name)) {
@@ -205,6 +211,14 @@ async function extractBusinesses(page: Page): Promise<any[]> {
           reviews: reviewsEl?.textContent?.trim()?.replace(/[^0-9]/g, '') || '',
           lat: parseFloat(coordsEl?.getAttribute('data-lat') || '0'),
           lng: parseFloat(coordsEl?.getAttribute('data-lng') || '0'),
+          openingHours: hours,
+          priceRange: priceEl?.getAttribute('aria-label')?.replace('Price: ', '') || '',
+          placeId: placeIdEl?.getAttribute('data-place-id') || '',
+          socialProfiles: {
+            instagram: (instaEl as HTMLAnchorElement)?.href || '',
+            facebook: (fbEl as HTMLAnchorElement)?.href || '',
+            twitter: (twEl as HTMLAnchorElement)?.href || '',
+          },
         });
       }
     });
@@ -213,44 +227,31 @@ async function extractBusinesses(page: Page): Promise<any[]> {
   });
 }
 
+// ============ EMAIL EXTRACTION ============
+
 async function extractEmail(page: Page, websiteUrl: string): Promise<string | null> {
   if (!websiteUrl || websiteUrl.includes('google.com')) return null;
 
   try {
     const emailPage = await page.context().newPage();
-    await emailPage.goto(websiteUrl, { 
-      waitUntil: 'domcontentloaded',
-      timeout: 15000 
-    });
+    await emailPage.goto(websiteUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
 
-    // Try multiple techniques to find email
     const email = await emailPage.evaluate(() => {
       const text = document.body?.innerText || '';
       
-      // Find email addresses in the page text
       const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
       const matches = text.match(emailRegex);
       
       if (matches) {
-        // Filter out common false positives
-        const valid = matches.filter(e => 
+        const realEmails = matches.filter(e => 
           !e.includes('example.com') && 
-          !e.includes('@domain.com') &&
-          !e.includes('@email.com') &&
-          !e.includes('@your') &&
-          !e.includes('@your-') &&
           !e.includes('noreply') &&
           !e.includes('no-reply') &&
-          !e.includes('support@') &&
-          !e.startsWith('info') === false
+          !e.includes('support@')
         );
-        
-        // Return first real-looking email
-        const realEmails = valid.filter(e => !e.match(/^(noreply|no-reply|support|admin|webmaster)/));
-        return realEmails.length > 0 ? realEmails[0].toLowerCase() : null;
+        if (realEmails.length > 0) return realEmails[0].toLowerCase();
       }
       
-      // Also check mailto: links
       const mailtoLinks = document.querySelectorAll('a[href^="mailto:"]');
       if (mailtoLinks.length > 0) {
         const href = mailtoLinks[0].getAttribute('href');
@@ -263,13 +264,12 @@ async function extractEmail(page: Page, websiteUrl: string): Promise<string | nu
     await emailPage.close();
     return email;
   } catch {
-    return null; // Website didn't load, skip email
+    return null;
   }
 }
 
-/**
- * Run scrape from command line
- */
+// ============ CLI ============
+
 if (require.main === module) {
   const [,, query, location] = process.argv;
   if (!query) {
@@ -277,14 +277,15 @@ if (require.main === module) {
     process.exit(1);
   }
 
-  scrapeLeads(query, location, { maxResults: 20 })
+  scrapeLeads(query, location, { maxResults: 20, includeEmail: false })
     .then(leads => {
       console.log(`\nFound ${leads.length} leads:\n`);
       leads.forEach((l, i) => {
         console.log(`${i + 1}. ${l.name}`);
         console.log(`   ${l.category} | ${l.phone}`);
-        console.log(`   ${l.email || 'no email'}`);
-        console.log(`   ${l.website || 'no website'}`);
+        console.log(`   Price: ${l.priceRange || 'N/A'}`);
+        console.log(`   Hours: ${l.openingHours.slice(0, 3).join(', ') || 'N/A'}`);
+        if (l.socialProfiles.instagram) console.log(`   Instagram: ${l.socialProfiles.instagram}`);
         console.log('');
       });
     })

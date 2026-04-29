@@ -97,11 +97,9 @@ try {
 
   // Extract emails if enabled
   if (extractEmails) {
-    const progress = Actor.createProgress({ title: 'Extracting emails' });
-    
     for (let i = 0; i < leads.length && i < maxResults; i++) {
       const lead = leads[i];
-      progress.set({ message: `${i + 1}/${Math.min(leads.length, maxResults)}: ${lead.name}` });
+      console.log(`Email extraction: ${i + 1}/${Math.min(leads.length, maxResults)}: ${lead.name}`);
 
       if (lead.website && !lead.website.includes('google.com')) {
         try {

@@ -137,6 +137,9 @@ try {
     }
   }
 
+  // Trim to maxResults before enrich/email to avoid wasting time
+  leads.splice(maxResults);
+
   // ============ ENRICH EACH PLACE ============
   // Always enrich to capture website, phone, reviews count from detail panel
   for (let idx = 0; idx < leads.length; idx++) {
@@ -260,8 +263,7 @@ try {
 }
 
 // ============ OUTPUT ============
-const results = leads.slice(0, maxResults);
-for (const lead of results) {
+for (const lead of leads) {
   const data = {
     name: lead.name || null,
     category: lead.category || null,

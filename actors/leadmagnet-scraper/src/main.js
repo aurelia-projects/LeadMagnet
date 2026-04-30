@@ -160,7 +160,7 @@ try {
 
         // Phone & website
         const detail = await page.evaluate(() => {
-          const d: any = {};
+          const d = {};
           const phoneBtn = document.querySelector('[data-item-id*="phone"]');
           if (phoneBtn) d.phone = phoneBtn.getAttribute('data-item-id')?.replace('phone:tel:', '') || '';
           const webBtn = document.querySelector('[data-item-id*="website"], a[data-item-id*="website"]');
@@ -257,7 +257,7 @@ try {
 // ============ OUTPUT ============
 const results = leads.slice(0, maxResults);
 for (const lead of results) {
-  const data: any = {
+  const data = {
     name: lead.name || null,
     category: lead.category || null,
     address: lead.address || null,

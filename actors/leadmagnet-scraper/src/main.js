@@ -144,19 +144,9 @@ try {
       console.log(`Enrich ${idx + 1}/${leads.length}: ${lead.name}`);
 
       try {
-        const clicked = await page.evaluate((name) => {
-          const cards = document.querySelectorAll('.Nv2PK');
-          for (const card of cards) {
-            if (card.getAttribute('aria-label') === name) {
-              const link = card.querySelector('a.hfpxzc');
-              if (link) { (link).click(); return true; }
-            }
-          }
-          return false;
-        }, lead.name);
-
-        if (!clicked) continue;
-        await page.waitForTimeout(3000);
+        if (!lead.placeUrl) continue;
+        await page.goto(lead.placeUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await page.waitForTimeout(2500);
 
         // Phone, website & reviews count from detail panel
         const detail = await page.evaluate(() => {

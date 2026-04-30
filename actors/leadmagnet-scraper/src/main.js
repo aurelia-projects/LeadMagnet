@@ -148,6 +148,46 @@ try {
         await page.goto(lead.placeUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
         await page.waitForTimeout(2500);
 
+        // DEBUG START
+        const debugHtml = await page.content();
+        const debugSnippet = debugHtml
+          .replace(/<script[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[\s\S]*?<\/style>/gi, '')
+          .substring(0, 8000);
+        console.log('=== DEBUG PAGE HTML ===');
+        console.log(debugSnippet);
+        console.log('=== END DEBUG ===');
+
+        const debugLinks = await page.evaluate(() => {
+          return Array.from(document.querySelectorAll('a[href]'))
+            .map(a => ({
+              href: a.href,
+              text: a.textContent?.trim().substring(0, 50),
+              ariaLabel: a.getAttribute('aria-label'),
+              dataItemId: a.getAttribute('data-item-id'),
+            }))
+            .filter(l => l.href && !l.href.includes('javascript'))
+            .slice(0, 30);
+        });
+        console.log('=== DEBUG LINKS ===');
+        console.log(JSON.stringify(debugLinks, null, 2));
+        console.log('=== END LINKS ===');
+
+        const debugDataItems = await page.evaluate(() => {
+          return Array.from(document.querySelectorAll('[data-item-id]'))
+            .map(el => ({
+              tag: el.tagName,
+              dataItemId: el.getAttribute('data-item-id'),
+              href: el.getAttribute('href'),
+              text: el.textContent?.trim().substring(0, 50),
+              ariaLabel: el.getAttribute('aria-label'),
+            }));
+        });
+        console.log('=== DEBUG DATA-ITEM-IDs ===');
+        console.log(JSON.stringify(debugDataItems, null, 2));
+        console.log('=== END DATA-ITEM-IDs ===');
+        // DEBUG END
+
         // Phone, website & reviews count from detail panel
         const detail = await page.evaluate(() => {
           const d = {};

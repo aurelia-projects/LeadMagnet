@@ -1,152 +1,19 @@
 {
-  "actorSpecification": 1,
-  "views": {
-    "overview": {
-      "title": "Leads",
-      "description": "Scraped business leads from Google Maps — one row per business.",
-      "display": {
-        "component": "table",
-        "properties": {
-          "name": {
-            "label": "Business Name",
-            "format": "text",
-            "sortable": true
-          },
-          "category": {
-            "label": "Category",
-            "format": "text",
-            "sortable": true
-          },
-          "address": {
-            "label": "Address",
-            "format": "text",
-            "sortable": true
-          },
-          "phone": {
-            "label": "Phone",
-            "format": "tel",
-            "sortable": true
-          },
-          "website": {
-            "label": "Website",
-            "format": "uri",
-            "sortable": false
-          },
-          "email": {
-            "label": "Email",
-            "format": "email",
-            "sortable": true
-          },
-          "rating": {
-            "label": "Rating",
-            "format": "number",
-            "sortable": true
-          },
-          "reviewsCount": {
-            "label": "Reviews",
-            "format": "number",
-            "sortable": true
-          },
-          "priceRange": {
-            "label": "Price",
-            "format": "text",
-            "sortable": false
-          },
-          "latitude": {
-            "label": "Latitude",
-            "format": "number",
-            "sortable": false
-          },
-          "longitude": {
-            "label": "Longitude",
-            "format": "number",
-            "sortable": false
-          },
-          "imageUrl": {
-            "label": "Photo",
-            "format": "image",
-            "sortable": false
-          },
-          "searchQuery": {
-            "label": "Search Query",
-            "format": "text",
-            "sortable": false
-          },
-          "scrapedAt": {
-            "label": "Scraped At",
-            "format": "date-time",
-            "sortable": true
-          }
-        }
-      }
+  "actorOutputSchemaVersion": 1,
+  "title": "LeadMagnet Output",
+  "description": "Business leads extracted from Google Maps are stored in the default dataset.",
+  "properties": {
+    "results": {
+      "type": "string",
+      "title": "Results (JSON/CSV)",
+      "description": "Structured business leads data available in the default dataset. Export as JSON, CSV, Excel, XML, or HTML.",
+      "template": "{{links.apiDefaultDatasetUrl}}/items"
     },
-    "reviews": {
-      "title": "Reviews",
-      "description": "Customer reviews extracted from Google Maps — one row per review.",
-      "display": {
-        "component": "table",
-        "properties": {
-          "name": {
-            "label": "Business Name",
-            "format": "text",
-            "sortable": true
-          },
-          "reviewerName": {
-            "label": "Reviewer",
-            "format": "text",
-            "sortable": true
-          },
-          "rating": {
-            "label": "Review Rating",
-            "format": "stars",
-            "sortable": true
-          },
-          "text": {
-            "label": "Review Text",
-            "format": "text",
-            "sortable": false
-          },
-          "publishDate": {
-            "label": "Published",
-            "format": "date",
-            "sortable": true
-          },
-          "likes": {
-            "label": "Likes",
-            "format": "number",
-            "sortable": true
-          }
-        }
-      }
-    },
-    "map": {
+    "mapView": {
+      "type": "string",
       "title": "Map View",
-      "description": "Geographic view of scraped business locations.",
-      "display": {
-        "component": "map",
-        "properties": {
-          "latitude": {
-            "label": "Latitude",
-            "format": "number"
-          },
-          "longitude": {
-            "label": "Longitude",
-            "format": "number"
-          },
-          "name": {
-            "label": "Business Name",
-            "format": "text"
-          },
-          "address": {
-            "label": "Address",
-            "format": "text"
-          },
-          "rating": {
-            "label": "Rating",
-            "format": "number"
-          }
-        }
-      }
+      "description": "Interactive map showing scraped business locations from the key-value store.",
+      "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/results-map.html"
     }
   }
 }

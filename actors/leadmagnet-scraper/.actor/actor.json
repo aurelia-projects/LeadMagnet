@@ -1,0 +1,26 @@
+{
+  "actorSpecification": 1,
+  "name": "leadmagnet-scraper",
+  "title": "LeadMagnet — Google Maps Business Scraper",
+  "description": "Scrape business leads from Google Maps. Enter a business type and location, get name, phone, website, email, address, rating, and reviews in CSV format. No API keys needed. 100% free and open source.",
+  "version": "0.1.0",
+  "meta": {
+    "website": "https://github.com/aurelia-projects/LeadMagnet",
+    "sourceCodeUrl": "https://github.com/aurelia-projects/LeadMagnet",
+    "issueTrackerUrl": "https://github.com/aurelia-projects/LeadMagnet/issues"
+  },
+  "storages": {
+    "dataset": {
+      "actorSpecification": 1,
+      "title": "Leads",
+      "description": "Scraped business leads"
+    }
+  },
+  "dockerfile": "./Dockerfile",
+  "input": "./input_schema.json",
+  "output": "./output_schema.json",
+  "runOptions": {
+    "memory": 2048,
+    "timeoutSecs": 300
+  }
+}

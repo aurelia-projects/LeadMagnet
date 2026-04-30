@@ -7,7 +7,7 @@
     "query": {
       "title": "Business Type",
       "type": "string",
-      "description": "What kind of business? Examples: dentist, plumber, restaurant, real estate agent",
+      "description": "What kind of business? Examples: dentist, plumber, restaurant, hotel, real estate agent",
       "editor": "textfield",
       "prefill": "dentist"
     },
@@ -35,12 +35,36 @@
       "editor": "checkbox",
       "default": true
     },
-    "includeOpeningHours": {
-      "title": "Include Opening Hours",
+    "extractReviews": {
+      "title": "Extract Reviews",
       "type": "boolean",
-      "description": "Extract business opening hours from Google Maps",
+      "description": "Extract customer reviews for each place (slower but includes full review data)",
+      "editor": "checkbox",
+      "default": false
+    },
+    "maxReviewsPerPlace": {
+      "title": "Max Reviews Per Place",
+      "type": "integer",
+      "description": "Maximum number of reviews to extract per place (1-20)",
+      "editor": "number",
+      "prefill": 5,
+      "default": 5,
+      "minimum": 1,
+      "maximum": 20
+    },
+    "extractAmenities": {
+      "title": "Extract Amenities",
+      "type": "boolean",
+      "description": "Extract features and amenities (wifi, parking, wheelchair accessible, etc.)",
       "editor": "checkbox",
       "default": true
+    },
+    "extractImages": {
+      "title": "Extract Images",
+      "type": "boolean",
+      "description": "Extract business photos from Google Maps (slower)",
+      "editor": "checkbox",
+      "default": false
     }
   },
   "required": ["query"]

@@ -1,154 +1,5 @@
 {
   "actorSpecification": 1,
-  "views": {
-    "overview": {
-      "title": "Leads",
-      "description": "Scraped business leads from Google Maps — one row per business.",
-      "display": {
-        "component": "table",
-        "properties": {
-          "name": {
-            "label": "Business Name",
-            "format": "text",
-            "sortable": true
-          },
-          "category": {
-            "label": "Category",
-            "format": "text",
-            "sortable": true
-          },
-          "address": {
-            "label": "Address",
-            "format": "text",
-            "sortable": true
-          },
-          "phone": {
-            "label": "Phone",
-            "format": "tel",
-            "sortable": true
-          },
-          "website": {
-            "label": "Website",
-            "format": "uri",
-            "sortable": false
-          },
-          "email": {
-            "label": "Email",
-            "format": "email",
-            "sortable": true
-          },
-          "rating": {
-            "label": "Rating",
-            "format": "number",
-            "sortable": true
-          },
-          "reviewsCount": {
-            "label": "Reviews",
-            "format": "number",
-            "sortable": true
-          },
-          "priceRange": {
-            "label": "Price",
-            "format": "text",
-            "sortable": false
-          },
-          "latitude": {
-            "label": "Latitude",
-            "format": "number",
-            "sortable": false
-          },
-          "longitude": {
-            "label": "Longitude",
-            "format": "number",
-            "sortable": false
-          },
-          "imageUrl": {
-            "label": "Photo",
-            "format": "image",
-            "sortable": false
-          },
-          "searchQuery": {
-            "label": "Search Query",
-            "format": "text",
-            "sortable": false
-          },
-          "scrapedAt": {
-            "label": "Scraped At",
-            "format": "date-time",
-            "sortable": true
-          }
-        }
-      }
-    },
-    "reviews": {
-      "title": "Reviews",
-      "description": "Customer reviews extracted from Google Maps — one row per review.",
-      "display": {
-        "component": "table",
-        "properties": {
-          "name": {
-            "label": "Business Name",
-            "format": "text",
-            "sortable": true
-          },
-          "reviewerName": {
-            "label": "Reviewer",
-            "format": "text",
-            "sortable": true
-          },
-          "rating": {
-            "label": "Review Rating",
-            "format": "number",
-            "sortable": true
-          },
-          "text": {
-            "label": "Review Text",
-            "format": "text",
-            "sortable": false
-          },
-          "publishDate": {
-            "label": "Published",
-            "format": "date",
-            "sortable": true
-          },
-          "likes": {
-            "label": "Likes",
-            "format": "number",
-            "sortable": true
-          }
-        }
-      }
-    },
-    "map": {
-      "title": "Map View",
-      "description": "Geographic view of scraped business locations.",
-      "display": {
-        "component": "map",
-        "properties": {
-          "latitude": {
-            "label": "Latitude",
-            "format": "number"
-          },
-          "longitude": {
-            "label": "Longitude",
-            "format": "number"
-          },
-          "name": {
-            "label": "Business Name",
-            "format": "text"
-          },
-          "address": {
-            "label": "Address",
-            "format": "text"
-          },
-          "rating": {
-            "label": "Rating",
-            "format": "number"
-          }
-        }
-      }
-    }
-  },
   "fields": {
     "name": {
       "title": "Business Name",
@@ -304,6 +155,95 @@
       "format": "date-time",
       "nullable": true,
       "example": "2026-04-30T12:00:00.000Z"
+    }
+  },
+  "views": {
+    "overview": {
+      "title": "Leads",
+      "description": "Scraped business leads from Google Maps — one row per business.",
+      "transformation": {
+        "fields": [
+          "name",
+          "category",
+          "address",
+          "phone",
+          "website",
+          "email",
+          "rating",
+          "reviewsCount",
+          "priceRange",
+          "openingHours",
+          "amenities",
+          "latitude",
+          "longitude",
+          "imageUrl",
+          "placeId",
+          "searchQuery",
+          "scrapedAt"
+        ]
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "name": { "label": "Business Name", "format": "text", "sortable": true },
+          "category": { "label": "Category", "format": "text", "sortable": true },
+          "address": { "label": "Address", "format": "text", "sortable": true },
+          "phone": { "label": "Phone", "format": "tel", "sortable": true },
+          "website": { "label": "Website", "format": "uri" },
+          "email": { "label": "Email", "format": "email", "sortable": true },
+          "rating": { "label": "Rating", "format": "number", "sortable": true },
+          "reviewsCount": { "label": "Reviews", "format": "number", "sortable": true },
+          "priceRange": { "label": "Price", "format": "text" },
+          "latitude": { "label": "Latitude", "format": "number" },
+          "longitude": { "label": "Longitude", "format": "number" },
+          "imageUrl": { "label": "Photo", "format": "image" },
+          "searchQuery": { "label": "Search", "format": "text" },
+          "scrapedAt": { "label": "Scraped At", "format": "date-time", "sortable": true }
+        }
+      }
+    },
+    "reviews": {
+      "title": "Reviews",
+      "description": "Customer reviews extracted from Google Maps — one row per review.",
+      "transformation": {
+        "unwind": "reviews",
+        "fields": [
+          "name",
+          "reviews.reviewerName",
+          "reviews.rating",
+          "reviews.text",
+          "reviews.publishDate",
+          "reviews.likes"
+        ]
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "name": { "label": "Business Name", "format": "text", "sortable": true },
+          "reviews.reviewerName": { "label": "Reviewer", "format": "text", "sortable": true },
+          "reviews.rating": { "label": "Review Rating", "format": "number", "sortable": true },
+          "reviews.text": { "label": "Review Text", "format": "text" },
+          "reviews.publishDate": { "label": "Published", "format": "date", "sortable": true },
+          "reviews.likes": { "label": "Likes", "format": "number", "sortable": true }
+        }
+      }
+    },
+    "map": {
+      "title": "Map View",
+      "description": "Geographic view of scraped business locations.",
+      "transformation": {
+        "fields": ["name", "address", "rating", "latitude", "longitude"]
+      },
+      "display": {
+        "component": "map",
+        "properties": {
+          "name": { "label": "Business Name", "format": "text" },
+          "address": { "label": "Address", "format": "text" },
+          "rating": { "label": "Rating", "format": "number" },
+          "latitude": { "label": "Latitude", "format": "number" },
+          "longitude": { "label": "Longitude", "format": "number" }
+        }
+      }
     }
   }
 }

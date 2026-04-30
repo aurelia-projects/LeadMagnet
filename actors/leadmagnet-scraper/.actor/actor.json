@@ -10,11 +10,7 @@
     "issueTrackerUrl": "https://github.com/aurelia-projects/LeadMagnet/issues"
   },
   "storages": {
-    "dataset": {
-      "actorSpecification": 1,
-      "title": "Leads",
-      "description": "Scraped business leads"
-    }
+    "dataset": "./dataset_schema.json"
   },
   "dockerfile": "./Dockerfile",
   "input": "./input_schema.json",

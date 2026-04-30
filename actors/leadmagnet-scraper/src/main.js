@@ -289,5 +289,5 @@ for (const lead of leads) {
   await Actor.pushData(data);
 }
 
-console.log(`✅ Scraped ${results.length} leads for "${searchQuery}"`);
+console.log(`✅ Scraped ${leads.length} leads for "${searchQuery}"`);
 await Actor.exit();

@@ -18,6 +18,6 @@
   "output": "./output_schema.json",
   "runOptions": {
     "memory": 2048,
-    "timeoutSecs": 300
+    "timeoutSecs": 600
   }
 }

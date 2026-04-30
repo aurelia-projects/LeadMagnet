@@ -148,70 +148,17 @@ try {
         await page.goto(lead.placeUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
         await page.waitForTimeout(2500);
 
-        // DEBUG START
-        const debugHtml = await page.content();
-        const debugSnippet = debugHtml
-          .replace(/<script[\s\S]*?<\/script>/gi, '')
-          .replace(/<style[\s\S]*?<\/style>/gi, '')
-          .substring(0, 8000);
-        console.log('=== DEBUG PAGE HTML ===');
-        console.log(debugSnippet);
-        console.log('=== END DEBUG ===');
-
-        const debugLinks = await page.evaluate(() => {
-          return Array.from(document.querySelectorAll('a[href]'))
-            .map(a => ({
-              href: a.href,
-              text: a.textContent?.trim().substring(0, 50),
-              ariaLabel: a.getAttribute('aria-label'),
-              dataItemId: a.getAttribute('data-item-id'),
-            }))
-            .filter(l => l.href && !l.href.includes('javascript'))
-            .slice(0, 30);
-        });
-        console.log('=== DEBUG LINKS ===');
-        console.log(JSON.stringify(debugLinks, null, 2));
-        console.log('=== END LINKS ===');
-
-        const debugDataItems = await page.evaluate(() => {
-          return Array.from(document.querySelectorAll('[data-item-id]'))
-            .map(el => ({
-              tag: el.tagName,
-              dataItemId: el.getAttribute('data-item-id'),
-              href: el.getAttribute('href'),
-              text: el.textContent?.trim().substring(0, 50),
-              ariaLabel: el.getAttribute('aria-label'),
-            }));
-        });
-        console.log('=== DEBUG DATA-ITEM-IDs ===');
-        console.log(JSON.stringify(debugDataItems, null, 2));
-        console.log('=== END DATA-ITEM-IDs ===');
-        // DEBUG END
-
         // Phone, website & reviews count from detail panel
         const detail = await page.evaluate(() => {
           const d = {};
 
-          // Phone
-          const phoneEl = document.querySelector('[data-item-id^="phone"]');
-          if (phoneEl) d.phone = phoneEl.getAttribute('data-item-id')?.replace('phone:tel:', '') || '';
+          // Phone — button with data-item-id="phone:tel:+1xxxxxxxxxx"
+          const phoneBtn = document.querySelector('button[data-item-id^="phone:tel:"]');
+          if (phoneBtn) d.phone = phoneBtn.getAttribute('data-item-id')?.replace('phone:tel:', '') || '';
 
-          // Website — scan all links for the website button
-          const allLinks = Array.from(document.querySelectorAll('a[href]'));
-          const websiteLink = allLinks.find(a => {
-            const href = a.href || '';
-            const label = a.getAttribute('aria-label') || '';
-            const text = a.textContent?.trim() || '';
-            return (
-              label.toLowerCase().includes('website') ||
-              text.toLowerCase() === 'website' ||
-              (href.startsWith('http') &&
-                !href.includes('google.com') &&
-                !href.includes('maps') &&
-                a.closest('[data-item-id]'))
-            );
-          });
-          if (websiteLink) d.website = websiteLink.href;
+          // Website — always stored in a[data-item-id="authority"]
+          const websiteEl = document.querySelector('a[data-item-id="authority"]');
+          if (websiteEl) d.website = websiteEl.getAttribute('href') || '';
 
           // Reviews count — from any button/span containing "N reviews"
           const reviewsBtn = Array.from(document.querySelectorAll('button, span')).find(el => {
@@ -289,7 +236,7 @@ try {
       if (lead.website && !lead.website.includes('google.com')) {
         try {
           const ep = await browser.newPage();
-          await ep.goto(lead.website, { waitUntil: 'domcontentloaded', timeout: 15000 });
+          await ep.goto(lead.website, { waitUntil: 'domcontentloaded', timeout: 8000 });
           const email = await ep.evaluate(() => {
             const text = document.body?.innerText || '';
             const m = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);

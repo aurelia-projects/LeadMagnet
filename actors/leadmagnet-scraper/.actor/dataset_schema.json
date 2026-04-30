@@ -1,0 +1,184 @@
+{
+  "actorSpecification": 1,
+  "fields": {
+    "name": {
+      "title": "Business Name",
+      "description": "The name of the business as shown on Google Maps",
+      "type": "string",
+      "nullable": true,
+      "example": "ABC Digital Marketing Agency"
+    },
+    "category": {
+      "title": "Category",
+      "description": "Primary business category assigned by Google Maps",
+      "type": "string",
+      "nullable": true,
+      "example": "Marketing Agency"
+    },
+    "address": {
+      "title": "Address",
+      "description": "Full street address of the business",
+      "type": "string",
+      "nullable": true,
+      "example": "123 Main Street, New York, NY 10001"
+    },
+    "phone": {
+      "title": "Phone Number",
+      "description": "Business phone number",
+      "type": "string",
+      "nullable": true,
+      "example": "+1 234 567 890"
+    },
+    "website": {
+      "title": "Website",
+      "description": "Business website URL if available",
+      "type": "string",
+      "format": "uri",
+      "nullable": true,
+      "example": "https://abcdigital.com"
+    },
+    "email": {
+      "title": "Email Address",
+      "description": "Email address extracted from the business website",
+      "type": "string",
+      "format": "email",
+      "nullable": true,
+      "example": "contact@abcdigital.com"
+    },
+    "rating": {
+      "title": "Rating",
+      "description": "Average Google Maps star rating (1.0 - 5.0)",
+      "type": "number",
+      "nullable": true,
+      "example": 4.7,
+      "minimum": 1,
+      "maximum": 5
+    },
+    "reviewsCount": {
+      "title": "Review Count",
+      "description": "Total number of Google Maps reviews",
+      "type": "integer",
+      "nullable": true,
+      "example": 128,
+      "minimum": 0
+    },
+    "reviews": {
+      "title": "Reviews",
+      "description": "Array of extracted customer reviews",
+      "type": "array",
+      "nullable": true,
+      "items": {
+        "type": "object",
+        "properties": {
+          "reviewerName": {
+            "type": "string",
+            "description": "Reviewer display name"
+          },
+          "rating": {
+            "type": "number",
+            "description": "Review star rating"
+          },
+          "text": {
+            "type": "string",
+            "description": "Full review text content"
+          },
+          "publishDate": {
+            "type": "string",
+            "description": "Relative publish date (e.g. 'a month ago')"
+          },
+          "likes": {
+            "type": "integer",
+            "description": "Number of likes the review received"
+          }
+        }
+      }
+    },
+    "priceRange": {
+      "title": "Price Range",
+      "description": "Price bracket indicator ($, $$, $$$)",
+      "type": "string",
+      "nullable": true,
+      "example": "$$"
+    },
+    "openingHours": {
+      "title": "Opening Hours",
+      "description": "Business hours extracted from search results",
+      "type": "array",
+      "nullable": true,
+      "items": {
+        "type": "string",
+        "example": "Mon-Fri 9:00-18:00"
+      }
+    },
+    "openingHoursDetailed": {
+      "title": "Opening Hours (Detailed)",
+      "description": "Full daily breakdown of opening hours from the business detail panel",
+      "type": "array",
+      "nullable": true,
+      "items": {
+        "type": "string",
+        "example": "Monday: 9:00 AM – 6:00 PM"
+      }
+    },
+    "amenities": {
+      "title": "Amenities",
+      "description": "List of features and services (wifi, parking, wheelchair accessible, etc.)",
+      "type": "array",
+      "nullable": true,
+      "items": {
+        "type": "string",
+        "example": "Free Wi-Fi"
+      }
+    },
+    "imageUrl": {
+      "title": "Image URL",
+      "description": "Primary Google Maps photo URL for the business",
+      "type": "string",
+      "format": "uri",
+      "nullable": true
+    },
+    "placeId": {
+      "title": "Place ID",
+      "description": "Unique Google Maps Place ID",
+      "type": "string",
+      "nullable": true,
+      "example": "ChIJN1t_tDeuEmsRUsoyG83frY4"
+    },
+    "placeUrl": {
+      "title": "Place URL",
+      "description": "Direct Google Maps URL for the business listing",
+      "type": "string",
+      "format": "uri",
+      "nullable": true
+    },
+    "latitude": {
+      "title": "Latitude",
+      "description": "GPS latitude coordinate",
+      "type": "number",
+      "nullable": true,
+      "example": 40.7128
+    },
+    "longitude": {
+      "title": "Longitude",
+      "description": "GPS longitude coordinate",
+      "type": "number",
+      "nullable": true,
+      "example": -74.006
+    },
+    "searchQuery": {
+      "title": "Search Query",
+      "description": "The search term and location used to find this lead",
+      "type": "string",
+      "nullable": true,
+      "example": "dentist Austin TX"
+    },
+    "scrapedAt": {
+      "title": "Scraped At",
+      "description": "ISO 8601 timestamp when the data was scraped",
+      "type": "string",
+      "format": "date-time",
+      "nullable": true,
+      "example": "2026-04-30T12:00:00.000Z"
+    }
+  }
+}

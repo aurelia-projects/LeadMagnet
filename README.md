@@ -1,60 +1,116 @@
-# LeadMagnet 🔥
+# LeadMagnet 🔥 — Google Maps Business Lead Scraper
 
-**Google Maps Business Lead Scraper** — free, open source, no API keys needed.
+> **Free · Open Source · Zero API Keys · No Rate Limits**
 
-Scrape business leads from Google Maps: names, phones, websites, emails, addresses, ratings, reviews. Export to CSV. Run on Apify or your own server.
+Scrape business leads from Google Maps at scale — names, phones, websites, emails, addresses, ratings, reviews, images, coordinates, opening hours, and more. Export to CSV, JSON, Excel, or any CRM. Run on Apify with one click or deploy yourself.
+
+[![Run on Apify](https://img.shields.io/badge/Run_on-Apify-1a73e8)](https://apify.com/aurelia-projects/leadmagnet-scraper)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+
+---
+
+## Why LeadMagnet?
+
+| Feature | LeadMagnet | Competitors |
+|---------|-----------|-------------|
+| Engine | ⚡ Playwright (faster, modern) | Puppeteer (older, slower) |
+| API Keys | ❌ None required | ✅ Required |
+| Rate Limits | ❌ None | ⚠️ Strict quotas |
+| Email Extraction | ✅ Included | ❌ Paid add-on |
+| Reviews Scraping | ✅ Full depth | ⚠️ Partial / extra cost |
+| Price | 💰 Free / Open Source | 💸 Per-request or subscription |
+| Setup | 🟢 One-click on Apify | 🔴 Complex config |
+
+---
 
 ## Quick Start
 
+### One-Click on Apify
+[Run on Apify](https://apify.com/aurelia-projects/leadmagnet-scraper) — enter a business type and location:
+
+```json
+{ "query": "dentist", "location": "Austin TX", "maxResults": 50, "extractEmails": true }
+```
+
+### Run Locally
 ```bash
 npx playwright install chromium
 npm run dev
 ```
+Open `http://localhost:3000`, enter a business type + location, click Search.
 
-Then visit `http://localhost:3000`, enter a business type + location, click Search.
+---
 
-## Apify Actor
+## What You Can Extract
 
-[![LeadMagnet on Apify](https://img.shields.io/badge/Apify-LeadMagnet-1a73e8)](https://apify.com/aurelia-projects/leadmagnet-scraper)
+📛 Business names · 📞 Phone numbers · 🌐 Websites · ✉️ Emails  
+📍 Full addresses · 🗺 GPS coordinates · ⭐ Ratings · 📊 Review count  
+💬 Full reviews (text, dates, profiles) · 🏷 Categories · 💲 Price range  
+🕒 Opening hours · ♿ Amenities (wifi, parking, wheelchair) · 📸 Images  
+🔗 Place IDs · 📱 Social profiles (Instagram, Facebook, Twitter)
 
-The Apify actor runs headless Chromium and outputs structured data:
+---
 
-**Input:** `{ "query": "dentists", "location": "Austin TX", "maxResults": 20, "extractEmails": true }`
+## 🔌 API & Integrations
 
-**Output:** JSON array with `name`, `category`, `address`, `phone`, `website`, `email`, `rating`, `reviews`, `searchQuery`, `scrapedAt`.
+Export to **CSV, JSON, Excel, or API**. Connect with **Zapier, Make, Slack, Google Sheets, Airtable, HubSpot, Salesforce**, or any HTTP endpoint via webhooks.
 
-## Tech Stack
+**API Example:**
+```bash
+POST /run
+{ "query": "real estate agent", "location": "Miami", "maxResults": 100 }
+```
 
-| Layer | Tool | Cost |
-|-------|------|------|
-| Scraper | Playwright | Free |
-| Runtime | Apify / Node.js | Free ($5/mo compute) |
-| Frontend | Next.js 16 | Free (Vercel) |
-| Database | Supabase | Free (500MB) |
-| Cache | Upstash Redis | Free (500K cmd/mo) |
-| AI | Groq | Free (14K req/day) |
-| Queue | QStash | Free (10K req/mo) |
+---
+
+## 🛠 Tech Stack
+
+| Layer | Tool |
+|-------|------|
+| Scraper engine | ⚡ Playwright |
+| Runtime | Apify |
+| Frontend | Next.js 16 |
+| Database | Supabase |
+| AI enrichment | Groq |
+
+---
+
+## Use Cases
+
+- **B2B lead generation** — prospect lists for sales outreach
+- **Agency campaigns** — local business data for clients
+- **Market research** — saturation analysis, service gaps
+- **SEO data mining** — local SEO competitive intelligence
+- **CRM enrichment** — fill missing contacts and emails
+- **AI training datasets** — real business listing data
+
+---
 
 ## Project Structure
 
 ```
 LeadMagnet/
-├── app/                    # Next.js web app
-│   ├── page.tsx           # Search UI + CSV export
-│   ├── api/scrape/        # Scrape endpoint
-│   └── api/enrich/        # Email enrichment
+├── app/                         # Next.js web app
+│   ├── page.tsx                 # Search UI + CSV export
+│   ├── api/scrape/              # Scrape endpoint
+│   └── api/enrich/              # Email enrichment
 ├── actors/
-│   └── leadmagnet-scraper/ # Apify actor
-│       ├── src/main.js     # Actor code
+│   └── leadmagnet-scraper/      # Apify actor
+│       ├── src/main.js          # Core Playwright scraper
 │       ├── .actor/actor.json
 │       ├── input_schema.json
-│       └── Dockerfile
+│       ├── Dockerfile
+│       └── README.md            # Full docs with FAQ
 ├── lib/
-│   ├── scraper.ts          # Core Playwright scraper
-│   └── config.ts          # Settings
+│   ├── scraper.ts
+│   └── config.ts
 └── package.json
 ```
 
+Full Apify actor documentation → [`actors/leadmagnet-scraper/README.md`](actors/leadmagnet-scraper/README.md)
+
+---
+
 ## License
 
-MIT — free for any use.
+**MIT** — free for any use. Personal, commercial, agency, enterprise.

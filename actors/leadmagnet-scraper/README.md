@@ -251,17 +251,15 @@ Content-Type: application/json
 
 ---
 
-## 🛠 Tech Stack Transparency
+## 🛠 Tech Stack
 
-| Layer | Tool | Cost |
-|-------|------|------|
-| Scraper engine | ⚡ Playwright | Free |
-| Runtime | Apify / Node.js | $0–5/mo |
-| Frontend | Next.js 16 | Free (Vercel) |
-| Database | Supabase | Free (500MB) |
-| Cache | Upstash Redis | Free (500K cmd/mo) |
-| AI enrichment | Groq | Free (14K req/day) |
-| Queue | QStash | Free (10K req/mo) |
+| Layer | Tool |
+|-------|------|
+| Scraper engine | ⚡ Playwright |
+| Runtime | Apify |
+| Frontend | Next.js 16 |
+| Database | Supabase |
+| AI enrichment | Groq |
 
 ### Why Playwright Over Puppeteer?
 | Factor | Playwright | Puppeteer |

@@ -1,19 +1,13 @@
 {
   "actorOutputSchemaVersion": 1,
-  "title": "LeadMagnet Output",
-  "description": "Business leads extracted from Google Maps are stored in the default dataset.",
+  "title": "LeadMagnet Scraper Output",
+  "description": "Google Maps business leads including names, phones, emails, addresses, ratings, reviews, and more.",
   "properties": {
     "results": {
       "type": "string",
-      "title": "Results (JSON/CSV)",
-      "description": "Structured business leads data available in the default dataset. Export as JSON, CSV, Excel, XML, or HTML.",
+      "title": "Business Leads",
+      "description": "Scraped business leads stored in the default dataset. Each item contains name, phone, website, email, address, rating, reviews, coordinates, opening hours, categories, and more.",
       "template": "{{links.apiDefaultDatasetUrl}}/items"
-    },
-    "mapView": {
-      "type": "string",
-      "title": "Map View",
-      "description": "Interactive map showing scraped business locations from the key-value store.",
-      "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/results-map.html"
     }
   }
 }

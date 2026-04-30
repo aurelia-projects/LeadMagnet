@@ -151,34 +151,38 @@ try {
         // Phone, website & reviews count from detail panel
         const detail = await page.evaluate(() => {
           const d = {};
+
           // Phone
-          const phoneBtn = document.querySelector('[data-item-id*="phone"]');
-          if (phoneBtn) d.phone = phoneBtn.getAttribute('data-item-id')?.replace('phone:tel:', '') || '';
-          // Website — try multiple selectors Google Maps uses
-          let webUrl = '';
-          const webBtn = document.querySelector('[data-item-id*="website"], a[data-item-id*="website"]');
-          if (webBtn) webUrl = webBtn.getAttribute('href') || '';
-          if (!webUrl) {
-            const altBtn = document.querySelector('a[href*="http"][rel*="noopener"]');
-            if (altBtn) webUrl = altBtn.getAttribute('href') || '';
+          const phoneEl = document.querySelector('[data-item-id^="phone"]');
+          if (phoneEl) d.phone = phoneEl.getAttribute('data-item-id')?.replace('phone:tel:', '') || '';
+
+          // Website — scan all links for the website button
+          const allLinks = Array.from(document.querySelectorAll('a[href]'));
+          const websiteLink = allLinks.find(a => {
+            const href = a.href || '';
+            const label = a.getAttribute('aria-label') || '';
+            const text = a.textContent?.trim() || '';
+            return (
+              label.toLowerCase().includes('website') ||
+              text.toLowerCase() === 'website' ||
+              (href.startsWith('http') &&
+                !href.includes('google.com') &&
+                !href.includes('maps') &&
+                a.closest('[data-item-id]'))
+            );
+          });
+          if (websiteLink) d.website = websiteLink.href;
+
+          // Reviews count — from any button/span containing "N reviews"
+          const reviewsBtn = Array.from(document.querySelectorAll('button, span')).find(el => {
+            const text = el.textContent || '';
+            return /[\d,]+\s*reviews?/i.test(text);
+          });
+          if (reviewsBtn) {
+            const match = reviewsBtn.textContent?.match(/([\d,]+)\s*reviews?/i);
+            if (match) d.reviewsCount = parseInt(match[1].replace(/,/g, ''));
           }
-          if (!webUrl) {
-            const btnRow = Array.from(document.querySelectorAll('button[jsaction]'));
-            for (const btn of btnRow) {
-              if (btn.textContent?.toLowerCase().includes('website')) {
-                const parent = btn.closest('[role="button"], a');
-                if (parent) webUrl = parent.getAttribute('href') || '';
-              }
-            }
-          }
-          d.website = webUrl || '';
-          // Reviews count from detail header
-          const headerRating = document.querySelector('.fontBodyMedium .Aq14fc, .TSUosb span, [aria-label*="reviews"]');
-          if (headerRating) {
-            const txt = headerRating.getAttribute('aria-label') || headerRating.textContent || '';
-            const m = txt.match(/([\d,]+)\s*reviews?/i);
-            if (m) d.reviewsCount = parseInt(m[1].replace(/,/g, ''));
-          }
+
           return d;
         });
         if (detail.phone) lead.phone = detail.phone;

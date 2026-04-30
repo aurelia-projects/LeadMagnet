@@ -138,8 +138,8 @@ try {
   }
 
   // ============ ENRICH EACH PLACE ============
-  if (extractReviews || extractImages || extractAmenities) {
-    for (let idx = 0; idx < leads.length; idx++) {
+  // Always enrich to capture website, phone, reviews count from detail panel
+  for (let idx = 0; idx < leads.length; idx++) {
       const lead = leads[idx];
       console.log(`Enrich ${idx + 1}/${leads.length}: ${lead.name}`);
 
@@ -158,17 +158,42 @@ try {
         if (!clicked) continue;
         await page.waitForTimeout(3000);
 
-        // Phone & website
+        // Phone, website & reviews count from detail panel
         const detail = await page.evaluate(() => {
           const d = {};
+          // Phone
           const phoneBtn = document.querySelector('[data-item-id*="phone"]');
           if (phoneBtn) d.phone = phoneBtn.getAttribute('data-item-id')?.replace('phone:tel:', '') || '';
+          // Website — try multiple selectors Google Maps uses
+          let webUrl = '';
           const webBtn = document.querySelector('[data-item-id*="website"], a[data-item-id*="website"]');
-          if (webBtn) d.website = webBtn.getAttribute('href') || '';
+          if (webBtn) webUrl = webBtn.getAttribute('href') || '';
+          if (!webUrl) {
+            const altBtn = document.querySelector('a[href*="http"][rel*="noopener"]');
+            if (altBtn) webUrl = altBtn.getAttribute('href') || '';
+          }
+          if (!webUrl) {
+            const btnRow = Array.from(document.querySelectorAll('button[jsaction]'));
+            for (const btn of btnRow) {
+              if (btn.textContent?.toLowerCase().includes('website')) {
+                const parent = btn.closest('[role="button"], a');
+                if (parent) webUrl = parent.getAttribute('href') || '';
+              }
+            }
+          }
+          d.website = webUrl || '';
+          // Reviews count from detail header
+          const headerRating = document.querySelector('.fontBodyMedium .Aq14fc, .TSUosb span, [aria-label*="reviews"]');
+          if (headerRating) {
+            const txt = headerRating.getAttribute('aria-label') || headerRating.textContent || '';
+            const m = txt.match(/([\d,]+)\s*reviews?/i);
+            if (m) d.reviewsCount = parseInt(m[1].replace(/,/g, ''));
+          }
           return d;
         });
         if (detail.phone) lead.phone = detail.phone;
         if (detail.website) lead.website = detail.website;
+        if (detail.reviewsCount) lead.reviewsCount = detail.reviewsCount;
 
         // Opening hours detail
         const hours = await page.evaluate(() => {
@@ -221,7 +246,6 @@ try {
         console.log(`  Skip enrich for ${lead.name}: ${err.message}`);
       }
     }
-  }
 
   // ============ EMAILS ============
   if (extractEmails) {

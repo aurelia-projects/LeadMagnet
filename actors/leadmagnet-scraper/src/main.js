@@ -163,17 +163,6 @@ try {
           const websiteEl = document.querySelector('a[data-item-id="authority"]');
           if (websiteEl) d.website = websiteEl.getAttribute('href') || '';
 
-          // DEBUG: find anything with "review" in leaf-node text
-          const reviewsDebug = await page.evaluate(() => {
-            const candidates = Array.from(document.querySelectorAll('*'))
-              .filter(el => el.children.length === 0)
-              .map(el => el.textContent?.trim())
-              .filter(t => t && t.toLowerCase().includes('review'))
-              .slice(0, 20);
-            return candidates;
-          });
-          console.log('REVIEWS DEBUG:', JSON.stringify(reviewsDebug));
-
           // reviewsCount — find any leaf node containing "X reviews"
           const allEls = Array.from(document.querySelectorAll('*'));
           for (const el of allEls) {
@@ -185,6 +174,17 @@ try {
 
           return d;
         });
+        // DEBUG: find anything with "review" in leaf-node text
+        const reviewsDebug = await page.evaluate(() => {
+          const candidates = Array.from(document.querySelectorAll('*'))
+            .filter(el => el.children.length === 0)
+            .map(el => el.textContent?.trim())
+            .filter(t => t && t.toLowerCase().includes('review'))
+            .slice(0, 20);
+          return candidates;
+        });
+        console.log('REVIEWS DEBUG:', JSON.stringify(reviewsDebug));
+
         if (detail.phone) lead.phone = detail.phone;
         if (detail.website) lead.website = detail.website;
         if (detail.reviewsCount) lead.reviewsCount = detail.reviewsCount;

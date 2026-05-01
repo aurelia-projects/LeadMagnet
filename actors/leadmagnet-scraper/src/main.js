@@ -149,7 +149,10 @@ try {
       try {
         if (!lead.placeUrl) continue;
         await page.goto(lead.placeUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
-        await page.waitForTimeout(2500);
+        // Wait for dynamic content — Maps SPA loads business data async
+        await page.waitForTimeout(5000);
+        // Also wait for a business-specific element if it appears
+        try { await page.waitForSelector('[data-item-id^="phone:"], button[data-item-id^="phone:"]', { timeout: 3000 }); } catch {}
 
         // Phone, website & reviews count from detail panel
         const detail = await page.evaluate(() => {
@@ -175,12 +178,14 @@ try {
           return d;
         });
         // DEBUG: find anything with "review" in leaf-node text
+        // DEBUG: review-related leaf nodes
         const reviewsDebug = await page.evaluate(() => {
-          const candidates = Array.from(document.querySelectorAll('*'))
-            .filter(el => el.children.length === 0)
+          const maxText = 120;
+          const candidates = Array.from(document.querySelectorAll('button, span, div'))
+            .filter(el => el.children.length === 0 || el.children[0]?.tagName === 'SPAN')
             .map(el => el.textContent?.trim())
-            .filter(t => t && t.toLowerCase().includes('review'))
-            .slice(0, 20);
+            .filter(t => t && t.length > 0 && t.length < maxText && (t.toLowerCase().includes('review') || /^[\d,]+\s*reviews?$/i.test(t)))
+            .slice(0, 30);
           return candidates;
         });
         console.log('REVIEWS DEBUG:', JSON.stringify(reviewsDebug));

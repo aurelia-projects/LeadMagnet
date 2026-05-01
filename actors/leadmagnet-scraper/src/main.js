@@ -163,11 +163,17 @@ try {
           const websiteEl = document.querySelector('a[data-item-id="authority"]');
           if (websiteEl) d.website = websiteEl.getAttribute('href') || '';
 
-          // reviewsCount — from rating aria-label on detail page
-          const ratingEl = document.querySelector('[data-item-id="rating"], [aria-label*="stars"]');
-          const ratingLabel = ratingEl?.getAttribute('aria-label') || '';
-          const rMatch = ratingLabel.match(/([\d,]+)\s*reviews?/i);
-          if (rMatch) d.reviewsCount = parseInt(rMatch[1].replace(/,/g, ''));
+          // reviewsCount — search any element whose aria-label contains "stars" and "reviews"
+          // Google Maps detail page embeds this in a button or span
+          const allEls = document.querySelectorAll('button, span, div, [aria-label]');
+          for (const el of allEls) {
+            const label = el.getAttribute('aria-label') || el.textContent || '';
+            if (/stars/.test(label) && /[\d,]+\s*reviews?/i.test(label)) {
+              const match = label.match(/([\d,]+)\s*reviews?/i);
+              if (match) d.reviewsCount = parseInt(match[1].replace(/,/g, ''));
+              break;
+            }
+          }
 
           return d;
         });

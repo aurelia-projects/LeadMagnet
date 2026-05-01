@@ -163,16 +163,13 @@ try {
           const websiteEl = document.querySelector('a[data-item-id="authority"]');
           if (websiteEl) d.website = websiteEl.getAttribute('href') || '';
 
-          // reviewsCount — search any element whose aria-label contains "stars" and "reviews"
-          // Google Maps detail page embeds this in a button or span
-          const allEls = document.querySelectorAll('button, span, div, [aria-label]');
+          // reviewsCount — find any leaf node containing "X reviews"
+          const allEls = Array.from(document.querySelectorAll('*'));
           for (const el of allEls) {
-            const label = el.getAttribute('aria-label') || el.textContent || '';
-            if (/stars/.test(label) && /[\d,]+\s*reviews?/i.test(label)) {
-              const match = label.match(/([\d,]+)\s*reviews?/i);
-              if (match) d.reviewsCount = parseInt(match[1].replace(/,/g, ''));
-              break;
-            }
+            if (el.children.length > 0) continue; // only leaf nodes
+            const text = el.textContent?.trim() || '';
+            const m = text.match(/^([\d,]+)\s*reviews?$/i);
+            if (m) { d.reviewsCount = parseInt(m[1].replace(/,/g, '')); break; }
           }
 
           return d;
@@ -241,15 +238,43 @@ try {
       if (lead.website && !lead.website.includes('google.com')) {
         try {
           const ep = await browser.newPage();
+          await ep.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
+
+          // Try homepage first
           await ep.goto(lead.website, { waitUntil: 'domcontentloaded', timeout: 8000 });
-          const email = await ep.evaluate(() => {
+
+          let email = await ep.evaluate(() => {
+            // Check mailto links first (most reliable)
+            const mailto = document.querySelector('a[href^="mailto:"]');
+            if (mailto) return mailto.getAttribute('href').replace('mailto:', '').split('?')[0].toLowerCase().trim();
+
+            // Check full page text
             const text = document.body?.innerText || '';
             const m = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-            const mailto = document.querySelector('a[href^="mailto:"]');
-            const found = m ? m[0].toLowerCase() : null;
-            if (found && !found.includes('example.com') && !found.includes('noreply')) return found;
-            return mailto?.getAttribute('href')?.replace('mailto:', '').toLowerCase() || null;
+            if (m && !m[0].includes('example.com') && !m[0].includes('noreply') && !m[0].includes('sentry')) {
+              return m[0].toLowerCase();
+            }
+            return null;
           });
+
+          // If not found on homepage, try /contact page
+          if (!email) {
+            try {
+              const base = new URL(lead.website).origin;
+              await ep.goto(base + '/contact', { waitUntil: 'domcontentloaded', timeout: 8000 });
+              email = await ep.evaluate(() => {
+                const mailto = document.querySelector('a[href^="mailto:"]');
+                if (mailto) return mailto.getAttribute('href').replace('mailto:', '').split('?')[0].toLowerCase().trim();
+                const text = document.body?.innerText || '';
+                const m = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+                if (m && !m[0].includes('example.com') && !m[0].includes('noreply') && !m[0].includes('sentry')) {
+                  return m[0].toLowerCase();
+                }
+                return null;
+              });
+            } catch {}
+          }
+
           if (email) lead.email = email;
           await ep.close();
         } catch {}

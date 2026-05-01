@@ -111,6 +111,14 @@ Full Apify actor documentation → [`actors/leadmagnet-scraper/README.md`](actor
 
 ---
 
+## Notes
+
+- **Email extraction:** Email is found for ~20-30% of businesses. Most sites use contact forms instead of visible email addresses. This is normal behavior, not a bug. Enable "Extract Emails" in the input settings.
+
+- **Reviews count:** Extracted from the Google Maps detail page when available. Some businesses may not display their review count depending on the page state.
+
+---
+
 ## License
 
 **MIT** — free for any use. Personal, commercial, agency, enterprise.

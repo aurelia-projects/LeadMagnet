@@ -166,39 +166,30 @@ try {
           const websiteEl = document.querySelector('a[data-item-id="authority"]');
           if (websiteEl) d.website = websiteEl.getAttribute('href') || '';
 
-          // reviewsCount — walk visible text nodes, skip script/style
-          const walker = document.createTreeWalker(
-            document.body,
-            NodeFilter.SHOW_TEXT,
-            {
-              acceptNode: (node) => {
-                const parent = node.parentElement;
-                if (!parent) return NodeFilter.FILTER_REJECT;
-                const tag = parent.tagName;
-                if (tag === 'SCRIPT' || tag === 'STYLE') return NodeFilter.FILTER_REJECT;
-                const text = node.textContent?.trim() || '';
-                if (/^([\d,]+)\s*reviews?$/i.test(text)) return NodeFilter.FILTER_ACCEPT;
-                return NodeFilter.FILTER_SKIP;
-              }
-            }
-          );
-          const node = walker.nextNode();
-          if (node) {
-            const m = node.textContent?.trim().match(/([\d,]+)/);
-            if (m) d.reviewsCount = parseInt(m[1].replace(/,/g, ''));
+          // reviewsCount — try aria-label on reviews button/link
+          const reviewCandidates = [
+            ...document.querySelectorAll('[aria-label*="review" i]'),
+            ...document.querySelectorAll('[href*="reviews" i]'),
+          ];
+          for (const el of reviewCandidates) {
+            const label = el.getAttribute('aria-label') || el.textContent || '';
+            const m = label.match(/([\d,]+)\s*reviews?/i);
+            if (m) { d.reviewsCount = parseInt(m[1].replace(/,/g, '')); break; }
           }
 
           return d;
         });
         // DEBUG: find anything with "review" in leaf-node text
-        // DEBUG: search broader for numbers followed by 'review'
+        // DEBUG: search for review count in header/overview area
         const reviewsDebug = await page.evaluate(() => {
           const results = [];
           const all = document.querySelectorAll('button, span, div, a, [aria-label]');
           for (const el of all) {
-            const t = el.textContent?.trim();
-            if (t && /[\d,]+\s*reviews?/i.test(t) && !/write/i.test(t)) {
-              results.push({ text: t.substring(0, 80), aria: el.getAttribute('aria-label')?.substring(0, 80) });
+            const txt = el.textContent?.trim() || '';
+            const aria = el.getAttribute('aria-label') || '';
+            const combined = txt + ' | ' + aria;
+            if (/[\d,]+\s*reviews?/i.test(combined) && !/write.*review/i.test(combined)) {
+              results.push({ t: txt.substring(0, 100), a: aria.substring(0, 100) });
             }
           }
           return results.slice(0, 10);

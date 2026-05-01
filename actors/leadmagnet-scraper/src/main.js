@@ -163,15 +163,11 @@ try {
           const websiteEl = document.querySelector('a[data-item-id="authority"]');
           if (websiteEl) d.website = websiteEl.getAttribute('href') || '';
 
-          // Reviews count — from any button/span containing "N reviews"
-          const reviewsBtn = Array.from(document.querySelectorAll('button, span')).find(el => {
-            const text = el.textContent || '';
-            return /[\d,]+\s*reviews?/i.test(text);
-          });
-          if (reviewsBtn) {
-            const match = reviewsBtn.textContent?.match(/([\d,]+)\s*reviews?/i);
-            if (match) d.reviewsCount = parseInt(match[1].replace(/,/g, ''));
-          }
+          // reviewsCount — from rating aria-label on detail page
+          const ratingEl = document.querySelector('[data-item-id="rating"], [aria-label*="stars"]');
+          const ratingLabel = ratingEl?.getAttribute('aria-label') || '';
+          const rMatch = ratingLabel.match(/([\d,]+)\s*reviews?/i);
+          if (rMatch) d.reviewsCount = parseInt(rMatch[1].replace(/,/g, ''));
 
           return d;
         });

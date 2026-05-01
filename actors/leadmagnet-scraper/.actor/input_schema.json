@@ -33,7 +33,7 @@
       "type": "boolean",
       "description": "Visit each business website to find email addresses (slower but more data)",
       "editor": "checkbox",
-      "default": true
+      	"default": false
     },
     "extractReviews": {
       "title": "Extract Reviews",
@@ -57,7 +57,7 @@
       "type": "boolean",
       "description": "Extract features and amenities (wifi, parking, wheelchair accessible, etc.)",
       "editor": "checkbox",
-      "default": true
+      	"default": false
     },
     "extractImages": {
       "title": "Extract Images",

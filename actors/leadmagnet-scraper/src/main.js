@@ -15,7 +15,7 @@ const {
   query,
   location = '',
   maxResults = 20,
-  extractEmails = true,
+  extractEmails = false,
   extractReviews = false,
   maxReviewsPerPlace = 5,
   extractImages = false,
@@ -80,9 +80,13 @@ try {
           if (t) amens.push(t);
         });
 
-        // Reviews count
-        const rCount = ratingEl?.closest('[aria-label]')?.getAttribute('aria-label')
-          ?.match(/([\d,]+)\s*reviews?/)?.[1]?.replace(/,/g, '');
+        // Reviews count — from card aria-label or stars parent
+        const reviewsEl = card.querySelector('[aria-label*="reviews" i]');
+        const starsEl = card.querySelector('[aria-label*="stars" i]');
+        const starsParentLabel = starsEl?.closest('[aria-label*="review" i]')?.getAttribute('aria-label') || '';
+        const rCount = reviewsEl?.getAttribute('aria-label')?.match(/([\d,]+)\s*reviews?/i)?.[1]?.replace(/,/g, '')
+          || starsParentLabel.match(/([\d,]+)/)?.[1]
+          || null;
 
         // Category from text after rating
         const category = (() => {
@@ -179,23 +183,6 @@ try {
 
           return d;
         });
-        // DEBUG: find anything with "review" in leaf-node text
-        // DEBUG: search for review count in header/overview area
-        const reviewsDebug = await page.evaluate(() => {
-          const results = [];
-          const all = document.querySelectorAll('button, span, div, a, [aria-label]');
-          for (const el of all) {
-            const txt = el.textContent?.trim() || '';
-            const aria = el.getAttribute('aria-label') || '';
-            const combined = txt + ' | ' + aria;
-            if (/[\d,]+\s*reviews?/i.test(combined) && !/write.*review/i.test(combined)) {
-              results.push({ t: txt.substring(0, 100), a: aria.substring(0, 100) });
-            }
-          }
-          return results.slice(0, 10);
-        });
-        console.log('REVIEWS DEBUG:', JSON.stringify(reviewsDebug));
-
         if (detail.phone) lead.phone = detail.phone;
         if (detail.website) lead.website = detail.website;
         if (detail.reviewsCount) lead.reviewsCount = detail.reviewsCount;
@@ -264,19 +251,6 @@ try {
 
           // Strip UTM params before visiting
           const cleanUrl = lead.website.split('?')[0];
-          console.log('Visiting website:', cleanUrl);
-
-          // Try homepage first
-          await ep.goto(cleanUrl, { waitUntil: 'domcontentloaded', timeout: 8000 });
-          console.log('Page loaded:', ep.url());
-
-          const emailDebug = await ep.evaluate(() => {
-            const mailtoLinks = Array.from(document.querySelectorAll('a[href^="mailto:"]')).map(a => a.getAttribute('href'));
-            const bodyText = document.body?.innerText?.substring(0, 2000) || '';
-            const allEmails = bodyText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
-            return { mailtoLinks, allEmails, url: window.location.href };
-          });
-          console.log('EMAIL DEBUG:', JSON.stringify(emailDebug));
 
           let email = await ep.evaluate(() => {
             // Check mailto links first (most reliable)

@@ -163,6 +163,17 @@ try {
           const websiteEl = document.querySelector('a[data-item-id="authority"]');
           if (websiteEl) d.website = websiteEl.getAttribute('href') || '';
 
+          // DEBUG: find anything with "review" in leaf-node text
+          const reviewsDebug = await page.evaluate(() => {
+            const candidates = Array.from(document.querySelectorAll('*'))
+              .filter(el => el.children.length === 0)
+              .map(el => el.textContent?.trim())
+              .filter(t => t && t.toLowerCase().includes('review'))
+              .slice(0, 20);
+            return candidates;
+          });
+          console.log('REVIEWS DEBUG:', JSON.stringify(reviewsDebug));
+
           // reviewsCount — find any leaf node containing "X reviews"
           const allEls = Array.from(document.querySelectorAll('*'));
           for (const el of allEls) {
@@ -242,6 +253,14 @@ try {
 
           // Try homepage first
           await ep.goto(lead.website, { waitUntil: 'domcontentloaded', timeout: 8000 });
+
+          const emailDebug = await ep.evaluate(() => {
+            const mailtoLinks = Array.from(document.querySelectorAll('a[href^="mailto:"]')).map(a => a.getAttribute('href'));
+            const bodyText = document.body?.innerText?.substring(0, 2000) || '';
+            const allEmails = bodyText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+            return { mailtoLinks, allEmails, url: window.location.href };
+          });
+          console.log('EMAIL DEBUG:', JSON.stringify(emailDebug));
 
           let email = await ep.evaluate(() => {
             // Check mailto links first (most reliable)

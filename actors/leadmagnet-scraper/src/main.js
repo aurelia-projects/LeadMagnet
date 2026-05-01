@@ -166,13 +166,26 @@ try {
           const websiteEl = document.querySelector('a[data-item-id="authority"]');
           if (websiteEl) d.website = websiteEl.getAttribute('href') || '';
 
-          // reviewsCount — find any leaf node containing "X reviews"
-          const allEls = Array.from(document.querySelectorAll('*'));
-          for (const el of allEls) {
-            if (el.children.length > 0) continue; // only leaf nodes
-            const text = el.textContent?.trim() || '';
-            const m = text.match(/^([\d,]+)\s*reviews?$/i);
-            if (m) { d.reviewsCount = parseInt(m[1].replace(/,/g, '')); break; }
+          // reviewsCount — walk visible text nodes, skip script/style
+          const walker = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_TEXT,
+            {
+              acceptNode: (node) => {
+                const parent = node.parentElement;
+                if (!parent) return NodeFilter.FILTER_REJECT;
+                const tag = parent.tagName;
+                if (tag === 'SCRIPT' || tag === 'STYLE') return NodeFilter.FILTER_REJECT;
+                const text = node.textContent?.trim() || '';
+                if (/^([\d,]+)\s*reviews?$/i.test(text)) return NodeFilter.FILTER_ACCEPT;
+                return NodeFilter.FILTER_SKIP;
+              }
+            }
+          );
+          const node = walker.nextNode();
+          if (node) {
+            const m = node.textContent?.trim().match(/([\d,]+)/);
+            if (m) d.reviewsCount = parseInt(m[1].replace(/,/g, ''));
           }
 
           return d;
@@ -256,8 +269,13 @@ try {
           const ep = await browser.newPage();
           await ep.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
 
+          // Strip UTM params before visiting
+          const cleanUrl = lead.website.split('?')[0];
+          console.log('Visiting website:', cleanUrl);
+
           // Try homepage first
-          await ep.goto(lead.website, { waitUntil: 'domcontentloaded', timeout: 8000 });
+          await ep.goto(cleanUrl, { waitUntil: 'domcontentloaded', timeout: 8000 });
+          console.log('Page loaded:', ep.url());
 
           const emailDebug = await ep.evaluate(() => {
             const mailtoLinks = Array.from(document.querySelectorAll('a[href^="mailto:"]')).map(a => a.getAttribute('href'));
@@ -301,7 +319,9 @@ try {
 
           if (email) lead.email = email;
           await ep.close();
-        } catch {}
+        } catch (err) {
+          console.log('Email scrape failed for ' + lead.name + ': ' + err.message);
+        }
       }
     }
   }

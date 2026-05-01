@@ -185,7 +185,8 @@ try {
         });
         if (detail.phone) lead.phone = detail.phone;
         if (detail.website) lead.website = detail.website;
-        if (detail.reviewsCount) lead.reviewsCount = detail.reviewsCount;
+        if (detail.reviewsCount && detail.reviewsCount > 0) lead.reviewsCount = detail.reviewsCount;
+        // Keep card-level reviewsCount if detail page didn't find it
 
         // Opening hours detail
         const hours = await page.evaluate(() => {
@@ -246,44 +247,35 @@ try {
       console.log(`Email: ${i + 1}/${leads.length}: ${lead.name}`);
       if (lead.website && !lead.website.includes('google.com')) {
         try {
+          const cleanUrl = lead.website.split('?')[0];
+          const base = new URL(cleanUrl).origin;
           const ep = await browser.newPage();
           await ep.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
 
-          // Strip UTM params before visiting
-          const cleanUrl = lead.website.split('?')[0];
+          const findEmail = async (pg) => {
+            return pg.evaluate(() => {
+              const mailto = document.querySelector('a[href^="mailto:"]');
+              if (mailto) return mailto.getAttribute('href').replace('mailto:', '').split('?')[0].toLowerCase().trim();
+              const text = document.body?.innerText || '';
+              const m = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+              if (m && !m[0].includes('example') && !m[0].includes('noreply') && !m[0].includes('sentry')) return m[0].toLowerCase();
+              return null;
+            });
+          };
 
-          let email = await ep.evaluate(() => {
-            // Check mailto links first (most reliable)
-            const mailto = document.querySelector('a[href^="mailto:"]');
-            if (mailto) return mailto.getAttribute('href').replace('mailto:', '').split('?')[0].toLowerCase().trim();
+          let email = null;
 
-            // Check full page text
-            const text = document.body?.innerText || '';
-            const m = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-            if (m && !m[0].includes('example.com') && !m[0].includes('noreply') && !m[0].includes('sentry')) {
-              return m[0].toLowerCase();
-            }
-            return null;
-          });
+          // Visit homepage first
+          await ep.goto(cleanUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
+          email = await findEmail(ep);
 
-          // If not found on homepage, try /contact and /about pages
+          // Try contact pages if not found
           if (!email) {
-            const contactUrls = ['/contact', '/contact-us', '/about', '/about-us'];
-            const base = new URL(lead.website).origin;
-            for (const path of contactUrls) {
+            for (const path of ['/contact', '/contact-us', '/about', '/about-us']) {
               try {
                 await ep.goto(base + path, { waitUntil: 'domcontentloaded', timeout: 8000 });
-                email = await ep.evaluate(() => {
-                  const mailto = document.querySelector('a[href^="mailto:"]');
-                  if (mailto) return mailto.getAttribute('href').replace('mailto:', '').split('?')[0].toLowerCase().trim();
-                  const text = document.body?.innerText || '';
-                  const m = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-                  if (m && !m[0].includes('example.com') && !m[0].includes('noreply') && !m[0].includes('sentry')) {
-                    return m[0].toLowerCase();
-                  }
-                  return null;
-                });
-                if (email) { console.log('Found email on:', base + path); break; }
+                email = await findEmail(ep);
+                if (email) break;
               } catch {}
             }
           }
@@ -291,7 +283,7 @@ try {
           if (email) lead.email = email;
           await ep.close();
         } catch (err) {
-          console.log('Email scrape failed for ' + lead.name + ': ' + err.message);
+          console.log('Email failed for ' + lead.name + ': ' + err.message);
         }
       }
     }
@@ -311,10 +303,10 @@ for (const lead of leads) {
     category: lead.category || null,
     address: lead.address || null,
     phone: lead.phone || null,
-    website: lead.website || null,
+    website: lead.website ? lead.website.split('?')[0] : null,
     email: lead.email || null,
     rating: lead.rating || null,
-    reviewsCount: lead.reviewsCount || null,
+    reviewsCount: lead.reviewsCount > 0 ? lead.reviewsCount : null,
     reviews: lead.reviews?.length ? lead.reviews.slice(0, maxReviewsPerPlace) : null,
     priceRange: lead.priceRange || null,
     openingHours: lead.openingHours?.length ? lead.openingHours : null,

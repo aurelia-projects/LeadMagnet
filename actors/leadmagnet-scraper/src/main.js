@@ -80,12 +80,11 @@ try {
           if (t) amens.push(t);
         });
 
-        // Reviews count — from card aria-label or stars parent
-        const reviewsEl = card.querySelector('[aria-label*="reviews" i]');
+        // Reviews count — from card text or rating aria-label
+        // Stars aria-label often contains "X stars Y reviews"
         const starsEl = card.querySelector('[aria-label*="stars" i]');
-        const starsParentLabel = starsEl?.closest('[aria-label*="review" i]')?.getAttribute('aria-label') || '';
-        const rCount = reviewsEl?.getAttribute('aria-label')?.match(/([\d,]+)\s*reviews?/i)?.[1]?.replace(/,/g, '')
-          || starsParentLabel.match(/([\d,]+)/)?.[1]
+        const starsLabel = starsEl?.getAttribute('aria-label') || '';
+        const rCount = starsLabel.match(/([\d,]+)\s*reviews?/i)?.[1]?.replace(/,/g, '')
           || null;
 
         // Category from text after rating

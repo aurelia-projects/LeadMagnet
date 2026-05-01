@@ -191,15 +191,17 @@ try {
           return d;
         });
         // DEBUG: find anything with "review" in leaf-node text
-        // DEBUG: review-related leaf nodes
+        // DEBUG: search broader for numbers followed by 'review'
         const reviewsDebug = await page.evaluate(() => {
-          const maxText = 120;
-          const candidates = Array.from(document.querySelectorAll('button, span, div'))
-            .filter(el => el.children.length === 0 || el.children[0]?.tagName === 'SPAN')
-            .map(el => el.textContent?.trim())
-            .filter(t => t && t.length > 0 && t.length < maxText && (t.toLowerCase().includes('review') || /^[\d,]+\s*reviews?$/i.test(t)))
-            .slice(0, 30);
-          return candidates;
+          const results = [];
+          const all = document.querySelectorAll('button, span, div, a, [aria-label]');
+          for (const el of all) {
+            const t = el.textContent?.trim();
+            if (t && /[\d,]+\s*reviews?/i.test(t) && !/write/i.test(t)) {
+              results.push({ text: t.substring(0, 80), aria: el.getAttribute('aria-label')?.substring(0, 80) });
+            }
+          }
+          return results.slice(0, 10);
         });
         console.log('REVIEWS DEBUG:', JSON.stringify(reviewsDebug));
 
@@ -299,22 +301,26 @@ try {
             return null;
           });
 
-          // If not found on homepage, try /contact page
+          // If not found on homepage, try /contact and /about pages
           if (!email) {
-            try {
-              const base = new URL(lead.website).origin;
-              await ep.goto(base + '/contact', { waitUntil: 'domcontentloaded', timeout: 8000 });
-              email = await ep.evaluate(() => {
-                const mailto = document.querySelector('a[href^="mailto:"]');
-                if (mailto) return mailto.getAttribute('href').replace('mailto:', '').split('?')[0].toLowerCase().trim();
-                const text = document.body?.innerText || '';
-                const m = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-                if (m && !m[0].includes('example.com') && !m[0].includes('noreply') && !m[0].includes('sentry')) {
-                  return m[0].toLowerCase();
-                }
-                return null;
-              });
-            } catch {}
+            const contactUrls = ['/contact', '/contact-us', '/about', '/about-us'];
+            const base = new URL(lead.website).origin;
+            for (const path of contactUrls) {
+              try {
+                await ep.goto(base + path, { waitUntil: 'domcontentloaded', timeout: 8000 });
+                email = await ep.evaluate(() => {
+                  const mailto = document.querySelector('a[href^="mailto:"]');
+                  if (mailto) return mailto.getAttribute('href').replace('mailto:', '').split('?')[0].toLowerCase().trim();
+                  const text = document.body?.innerText || '';
+                  const m = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+                  if (m && !m[0].includes('example.com') && !m[0].includes('noreply') && !m[0].includes('sentry')) {
+                    return m[0].toLowerCase();
+                  }
+                  return null;
+                });
+                if (email) { console.log('Found email on:', base + path); break; }
+              } catch {}
+            }
           }
 
           if (email) lead.email = email;

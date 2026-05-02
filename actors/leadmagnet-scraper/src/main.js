@@ -3,7 +3,7 @@
  * Google Maps Business Lead Scraper
  *
  * Free, open source. No API keys needed.
- * Version 0.4.0 — Fixed reviewsCount, clean websites, reliable enrichment
+ * Version 0.4.1 — Debug reviewsCount, restored address + hours
  */
 
 import { Actor } from 'apify';
@@ -41,7 +41,6 @@ try {
   const url = `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}/`;
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(3000);
-
   await page.waitForSelector('.Nv2PK', { timeout: 15000 }).catch(() => {});
 
   // Scroll to load results
@@ -54,7 +53,7 @@ try {
 
     const businesses = await page.evaluate(() => {
       const items = [];
-      document.querySelectorAll('.Nv2PK').forEach(card => {
+      document.querySelectorAll('.Nv2PK').forEach((card, cardIdx) => {
         const name = card.getAttribute('aria-label');
         if (!name || items.find(i => i.name === name)) return;
 
@@ -69,47 +68,51 @@ try {
         const ratingLabel = ratingEl?.getAttribute('aria-label') || '';
         const rating = ratingLabel.match(/[\d.]+/)?.[0];
 
-        // reviewsCount — the stars aria-label is formatted as "4.9 stars 235 reviews"
-        // This is the most reliable source on the search card
+        // DEBUG: dump first card's aria-labels and text to find reviewsCount
+        if (cardIdx === 0) {
+          const allLabels = Array.from(card.querySelectorAll('[aria-label]'))
+            .map(el => ({ tag: el.tagName, label: el.getAttribute('aria-label'), text: el.textContent?.trim().substring(0, 50) }));
+          console.log('CARD_ARIA_LABELS:', JSON.stringify(allLabels));
+          console.log('CARD_FULL_TEXT:', fullText.substring(0, 300));
+        }
+
+        // reviewsCount
         const reviewsFromStars = ratingLabel.match(/(\d[\d,]*)\s*reviews?/i)?.[1]?.replace(/,/g, '');
-
-        // Fallback: look for a dedicated reviews element on the card
         const reviewsEl = card.querySelector('[aria-label*="reviews" i]');
-        const reviewsFromEl = reviewsEl?.getAttribute('aria-label')?.match(/(\d[\d,]*)\s*reviews?/i)?.[1]?.replace(/,/g, '');
-
+        const reviewsFromEl = reviewsEl?.getAttribute('aria-label')?.match(/(\d[\d,]*)/)?.[1]?.replace(/,/g, '');
         const rCount = reviewsFromStars || reviewsFromEl || null;
 
-        // Opening hours
+        // Opening hours — full match including time
         const hours = [];
-        const hourMatch = fullText.match(/(Open|Closed)([^·]*(?:AM|PM|am|pm))?/);
+        const hourMatch = fullText.match(/(Open|Closed)[^\n·]*/i);
         if (hourMatch) hours.push(hourMatch[0].trim());
 
-        // Amenities from tooltips
+        // Amenities
         const amens = [];
         card.querySelectorAll('[data-tooltip]').forEach(el => {
           const t = el.getAttribute('data-tooltip');
           if (t) amens.push(t);
         });
 
-        // Category — text between rating number and first ·
+        // Category
         const category = (() => {
           const m = fullText.match(/\d\.\d\s*([A-Za-z\s&'-]+?)(?:\s*·|\s*\d|\s*$)/);
           return m?.[1]?.trim() || '';
         })();
 
-        // Address — segment after · that contains a digit but no AM/PM
+        // Address — segment after · containing a digit, no AM/PM
         const address = (() => {
           const parts = fullText.split('·').map(s => s.trim());
           for (let i = 1; i < parts.length; i++) {
             const clean = parts[i].replace(/[\uE934\uE935\uE938\uE940]/g, '').trim();
-            if (clean.length > 5 && /\d/.test(clean) && !clean.match(/AM|PM/i)) {
-              return clean.replace(/(Closed|Open)(\s*·\s*Opens.*|\s*\d+:\d+.*)?$/i, '').trim();
+            if (clean.length > 5 && /\d/.test(clean) && !clean.match(/\b(AM|PM)\b/i) && !clean.match(/^\d+\.\d/)) {
+              return clean.replace(/(Closed|Open)\b.*/i, '').trim();
             }
           }
           return '';
         })();
 
-        // Coordinates from placeUrl
+        // Coordinates
         const coords = (() => {
           const m = placeUrl.match(/!3d(-?[\d.]+)!4d(-?[\d.]+)/);
           return m ? { lat: parseFloat(m[1]), lng: parseFloat(m[2]) } : { lat: null, lng: null };
@@ -118,7 +121,7 @@ try {
         items.push({
           name,
           category,
-          address,
+          address: address || '',
           rating: rating ? parseFloat(rating) : null,
           reviewsCount: rCount ? parseInt(rCount) : null,
           placeUrl,
@@ -141,7 +144,6 @@ try {
     }
   }
 
-  // Trim to maxResults
   leads.splice(maxResults);
 
   // ============ ENRICH EACH PLACE ============
@@ -164,24 +166,22 @@ try {
         const phoneBtn = document.querySelector('button[data-item-id^="phone:tel:"]');
         if (phoneBtn) d.phone = phoneBtn.getAttribute('data-item-id')?.replace('phone:tel:', '') || '';
 
-        // Website — data-item-id="authority" is always the business website
+        // Website
         const websiteEl = document.querySelector('a[data-item-id="authority"]');
         if (websiteEl) d.website = websiteEl.getAttribute('href') || '';
 
-        // reviewsCount — try the header area which shows "235 reviews"
-        // The detail page header contains the full rating line
-        const headerText = document.querySelector('div[jsaction*="rating"]')?.textContent
-          || document.querySelector('[data-review-count]')?.getAttribute('data-review-count')
-          || '';
-        const headerMatch = headerText.match(/(\d[\d,]*)\s*reviews?/i);
-        if (headerMatch) d.reviewsCount = parseInt(headerMatch[1].replace(/,/g, ''));
+        // reviewsCount — exact match aria-label "N reviews"
+        for (const el of document.querySelectorAll('[aria-label]')) {
+          const label = el.getAttribute('aria-label') || '';
+          const m = label.match(/^([\d,]+)\s+reviews?$/i);
+          if (m) { d.reviewsCount = parseInt(m[1].replace(/,/g, '')); break; }
+        }
 
-        // Fallback: scan all aria-labels for review count
+        // Fallback: button/span text "N reviews"
         if (!d.reviewsCount) {
-          const allEls = document.querySelectorAll('[aria-label]');
-          for (const el of allEls) {
-            const label = el.getAttribute('aria-label') || '';
-            const m = label.match(/^([\d,]+)\s+reviews?$/i);
+          for (const el of document.querySelectorAll('button, span')) {
+            const text = el.textContent?.trim() || '';
+            const m = text.match(/^([\d,]+)\s+reviews?$/i);
             if (m) { d.reviewsCount = parseInt(m[1].replace(/,/g, '')); break; }
           }
         }
@@ -191,7 +191,6 @@ try {
 
       if (detail.phone) lead.phone = detail.phone;
       if (detail.website) lead.website = detail.website;
-      // Only overwrite reviewsCount from detail page if card didn't get it
       if (detail.reviewsCount && !lead.reviewsCount) lead.reviewsCount = detail.reviewsCount;
 
       // Opening hours detail
@@ -200,9 +199,9 @@ try {
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         document.querySelectorAll('[aria-label*="hour" i], .A1pRfd, .YMlIz').forEach(el => {
           const t = el.textContent?.trim();
-          if (t && (days.some(d => t.includes(d)) || t.match(/AM|PM/i))) h.push(t);
+          if (t && (days.some(d => t.includes(d)) || t.match(/\b(AM|PM)\b/i))) h.push(t);
         });
-        return [...new Set(h)]; // deduplicate
+        return [...new Set(h)];
       });
       if (hours.length) lead.openingHoursDetail = hours;
 
@@ -246,10 +245,8 @@ try {
     }
   }
 
-  // ============ EMAILS ============
   if (extractEmails) {
     console.log('⚠️  Email extraction not available under LIMITED_PERMISSIONS — skipping.');
-    console.log('    To enable: upgrade Apify plan and add proxy configuration.');
   }
 
 } catch (err) {

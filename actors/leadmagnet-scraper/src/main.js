@@ -80,12 +80,7 @@ try {
           if (t) amens.push(t);
         });
 
-        // Reviews count — from card text or rating aria-label
-        // Stars aria-label often contains "X stars Y reviews"
-        const starsEl = card.querySelector('[aria-label*="stars" i]');
-        const starsLabel = starsEl?.getAttribute('aria-label') || '';
-        const rCount = starsLabel.match(/([\d,]+)\s*reviews?/i)?.[1]?.replace(/,/g, '')
-          || null;
+        // Reviews count — not available on search cards; scraped from detail page enrich block
 
         // Category from text after rating
         const category = (() => {
@@ -116,7 +111,7 @@ try {
           category,
           address,
           rating: rating ? parseFloat(rating) : 0,
-          reviewsCount: rCount ? parseInt(rCount) : 0,
+          reviewsCount: null,
           placeUrl,
           placeId: placeUrl.match(/data=!4m7.*?1s([^!]+)/)?.[1] || '',
           imageUrl: (imgEl)?.src || '',
@@ -169,15 +164,22 @@ try {
           const websiteEl = document.querySelector('a[data-item-id="authority"]');
           if (websiteEl) d.website = websiteEl.getAttribute('href') || '';
 
-          // reviewsCount — try aria-label on reviews button/link
-          const reviewCandidates = [
-            ...document.querySelectorAll('[aria-label*="review" i]'),
-            ...document.querySelectorAll('[href*="reviews" i]'),
-          ];
-          for (const el of reviewCandidates) {
-            const label = el.getAttribute('aria-label') || el.textContent || '';
-            const m = label.match(/([\d,]+)\s*reviews?/i);
-            if (m) { d.reviewsCount = parseInt(m[1].replace(/,/g, '')); break; }
+          // reviewsCount — from JSON-LD structured data (most reliable)
+          const jsonLd = document.querySelector('script[type="application/ld+json"]');
+          if (jsonLd) {
+            try {
+              const data = JSON.parse(jsonLd.textContent);
+              if (data.aggregateRating?.reviewCount) {
+                d.reviewsCount = parseInt(data.aggregateRating.reviewCount);
+              }
+            } catch {}
+          }
+
+          // Fallback — scan all text for "X reviews" pattern
+          if (!d.reviewsCount) {
+            const allText = document.body?.innerText || '';
+            const m = allText.match(/\b([\d,]+)\s+reviews?\b/i);
+            if (m) d.reviewsCount = parseInt(m[1].replace(/,/g, ''));
           }
 
           return d;
@@ -185,7 +187,6 @@ try {
         if (detail.phone) lead.phone = detail.phone;
         if (detail.website) lead.website = detail.website;
         if (detail.reviewsCount && detail.reviewsCount > 0) lead.reviewsCount = detail.reviewsCount;
-        // Keep card-level reviewsCount if detail page didn't find it
 
         // Opening hours detail
         const hours = await page.evaluate(() => {
@@ -239,53 +240,11 @@ try {
       }
     }
 
-  // ============ EMAILS ============
+  // ============ EMAILS ===
   if (extractEmails) {
-    for (let i = 0; i < leads.length; i++) {
-      const lead = leads[i];
-      console.log(`Email: ${i + 1}/${leads.length}: ${lead.name}`);
-      if (lead.website && !lead.website.includes('google.com')) {
-        try {
-          const cleanUrl = lead.website.split('?')[0];
-          const base = new URL(cleanUrl).origin;
-          const ep = await browser.newPage();
-          await ep.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
-
-          const findEmail = async (pg) => {
-            return pg.evaluate(() => {
-              const mailto = document.querySelector('a[href^="mailto:"]');
-              if (mailto) return mailto.getAttribute('href').replace('mailto:', '').split('?')[0].toLowerCase().trim();
-              const text = document.body?.innerText || '';
-              const m = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-              if (m && !m[0].includes('example') && !m[0].includes('noreply') && !m[0].includes('sentry')) return m[0].toLowerCase();
-              return null;
-            });
-          };
-
-          let email = null;
-
-          // Visit homepage first
-          await ep.goto(cleanUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
-          email = await findEmail(ep);
-
-          // Try contact pages if not found
-          if (!email) {
-            for (const path of ['/contact', '/contact-us', '/about', '/about-us']) {
-              try {
-                await ep.goto(base + path, { waitUntil: 'domcontentloaded', timeout: 8000 });
-                email = await findEmail(ep);
-                if (email) break;
-              } catch {}
-            }
-          }
-
-          if (email) lead.email = email;
-          await ep.close();
-        } catch (err) {
-          console.log('Email failed for ' + lead.name + ': ' + err.message);
-        }
-      }
-    }
+    console.log('⚠️ Email extraction not available in current permission level');
+    // To enable: upgrade Apify plan and configure proxy settings
+    // External HTTP blocked under LIMITED_PERMISSIONS sandbox
   }
 
 } catch (err) {

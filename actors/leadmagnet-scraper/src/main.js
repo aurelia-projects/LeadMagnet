@@ -53,7 +53,7 @@ try {
 
     const businesses = await page.evaluate(() => {
       const items = [];
-      document.querySelectorAll('.Nv2PK').forEach((card, cardIdx) => {
+      document.querySelectorAll('.Nv2PK').forEach((card) => {
         const name = card.getAttribute('aria-label');
         if (!name || items.find(i => i.name === name)) return;
 
@@ -68,24 +68,15 @@ try {
         const ratingLabel = ratingEl?.getAttribute('aria-label') || '';
         const rating = ratingLabel.match(/[\d.]+/)?.[0];
 
-        // DEBUG: dump first card's aria-labels and text to find reviewsCount
-        if (cardIdx === 0) {
-          const allLabels = Array.from(card.querySelectorAll('[aria-label]'))
-            .map(el => ({ tag: el.tagName, label: el.getAttribute('aria-label'), text: el.textContent?.trim().substring(0, 50) }));
-          console.log('CARD_ARIA_LABELS:', JSON.stringify(allLabels));
-          console.log('CARD_FULL_TEXT:', fullText.substring(0, 300));
-        }
+        // reviewsCount — not available on search cards (confirmed by debug), captured in detail enrich
 
-        // reviewsCount
-        const reviewsFromStars = ratingLabel.match(/(\d[\d,]*)\s*reviews?/i)?.[1]?.replace(/,/g, '');
-        const reviewsEl = card.querySelector('[aria-label*="reviews" i]');
-        const reviewsFromEl = reviewsEl?.getAttribute('aria-label')?.match(/(\d[\d,]*)/)?.[1]?.replace(/,/g, '');
-        const rCount = reviewsFromStars || reviewsFromEl || null;
-
-        // Opening hours — full match including time
+        // Opening hours — capture "Closed · Opens 8 AM Mon" etc.
         const hours = [];
-        const hourMatch = fullText.match(/(Open|Closed)[^\n·]*/i);
-        if (hourMatch) hours.push(hourMatch[0].trim());
+        const hourMatch = fullText.match(/((?:Open|Closed)[^\n]*)/i);
+        if (hourMatch) {
+          const cleaned = hourMatch[0].replace(/\s*(Book online|Order online|Menu|Website)\s*$/i, '').trim();
+          if (cleaned) hours.push(cleaned);
+        }
 
         // Amenities
         const amens = [];
@@ -123,7 +114,7 @@ try {
           category,
           address: address || '',
           rating: rating ? parseFloat(rating) : null,
-          reviewsCount: rCount ? parseInt(rCount) : null,
+          reviewsCount: null,
           placeUrl,
           placeId: placeUrl.match(/1s([^!]+)!8m/)?.[1] || '',
           imageUrl: imgEl?.src || '',
@@ -135,25 +126,11 @@ try {
           socialProfiles: {
             instagram: '', facebook: '', twitter: '',
           },
-          _debugText: cardIdx === 0 ? fullText.substring(0, 400) : undefined,
-          _debugLabels: cardIdx === 0 ? Array.from(card.querySelectorAll('[aria-label]'))
-            .map(el => ({ tag: el.tagName, label: el.getAttribute('aria-label') })) : undefined,
+
         });
       });
       return items;
     });
-
-    // DEBUG — log first card data in Node.js context
-    if (businesses.length > 0 && leads.length === 0) {
-      const firstCard = businesses[0];
-      console.log('DEBUG_FIRST_CARD:', JSON.stringify({
-        name: firstCard.name,
-        rating: firstCard.rating,
-        reviewsCount: firstCard.reviewsCount,
-        fullText: firstCard._debugText,
-        allLabels: firstCard._debugLabels,
-      }));
-    }
 
     for (const biz of businesses) {
       if (!leads.find(l => l.name === biz.name)) {

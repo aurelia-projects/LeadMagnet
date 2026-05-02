@@ -152,6 +152,15 @@ try {
         // Also wait for a business-specific element if it appears
         try { await page.waitForSelector('[data-item-id^="phone:"], button[data-item-id^="phone:"]', { timeout: 3000 }); } catch {}
 
+        // reviewsCount — extract from raw HTML before SPA transforms it
+        const rawHtml = await page.content();
+        const m1 = rawHtml.match(/(\d+)\s*reviews/i);
+        const m2 = rawHtml.match(/"reviewCount"\s*:\s*"?(\d+)"?/);
+        const m3 = rawHtml.match(/\[(\d+),\s*"reviews"\]/);
+        const rawReviewsCount = m2?.[1] || m1?.[1] || m3?.[1] || null;
+        if (rawReviewsCount) lead.reviewsCount = parseInt(rawReviewsCount);
+        console.log(`reviewsCount for ${lead.name}:`, lead.reviewsCount);
+
         // Phone, website & reviews count from detail panel
         const detail = await page.evaluate(() => {
           const d = {};

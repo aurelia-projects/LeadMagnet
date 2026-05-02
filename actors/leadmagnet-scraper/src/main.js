@@ -132,10 +132,28 @@ try {
           priceRange: priceEl?.getAttribute('aria-label')?.replace('Price: ', '') || '',
           lat: coords.lat,
           lng: coords.lng,
+          socialProfiles: {
+            instagram: '', facebook: '', twitter: '',
+          },
+          _debugText: cardIdx === 0 ? fullText.substring(0, 400) : undefined,
+          _debugLabels: cardIdx === 0 ? Array.from(card.querySelectorAll('[aria-label]'))
+            .map(el => ({ tag: el.tagName, label: el.getAttribute('aria-label') })) : undefined,
         });
       });
       return items;
     });
+
+    // DEBUG — log first card data in Node.js context
+    if (businesses.length > 0 && leads.length === 0) {
+      const firstCard = businesses[0];
+      console.log('DEBUG_FIRST_CARD:', JSON.stringify({
+        name: firstCard.name,
+        rating: firstCard.rating,
+        reviewsCount: firstCard.reviewsCount,
+        fullText: firstCard._debugText,
+        allLabels: firstCard._debugLabels,
+      }));
+    }
 
     for (const biz of businesses) {
       if (!leads.find(l => l.name === biz.name)) {

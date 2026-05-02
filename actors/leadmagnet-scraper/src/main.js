@@ -80,7 +80,19 @@ try {
           if (t) amens.push(t);
         });
 
-        // Reviews count — not available on search cards; scraped from detail page enrich block
+        // Review count — visible as "(235)" next to the rating on the card
+        const cardText = card.textContent || '';
+
+        // Pattern 1: number in parentheses after rating "(235)"
+        const parenMatch = cardText.match(/\((\d[\d,]*)\)/);
+
+        // Pattern 2: aria-label on rating element sometimes has "235 reviews"
+        const ratingAriaLabel = card.querySelector('[aria-label*="star"]')?.getAttribute('aria-label') || '';
+        const ariaMatch = ratingAriaLabel.match(/([\d,]+)\s*review/i);
+
+        const rCount = ariaMatch?.[1]?.replace(/,/g, '')
+          || parenMatch?.[1]?.replace(/,/g, '')
+          || null;
 
         // Category from text after rating
         const category = (() => {
@@ -111,7 +123,7 @@ try {
           category,
           address,
           rating: rating ? parseFloat(rating) : 0,
-          reviewsCount: null,
+          reviewsCount: rCount ? parseInt(rCount) : null,
           placeUrl,
           placeId: placeUrl.match(/data=!4m7.*?1s([^!]+)/)?.[1] || '',
           imageUrl: (imgEl)?.src || '',
@@ -152,15 +164,6 @@ try {
         // Also wait for a business-specific element if it appears
         try { await page.waitForSelector('[data-item-id^="phone:"], button[data-item-id^="phone:"]', { timeout: 3000 }); } catch {}
 
-        // reviewsCount — extract from raw HTML before SPA transforms it
-        const rawHtml = await page.content();
-        const m1 = rawHtml.match(/(\d+)\s*reviews/i);
-        const m2 = rawHtml.match(/"reviewCount"\s*:\s*"?(\d+)"?/);
-        const m3 = rawHtml.match(/\[(\d+),\s*"reviews"\]/);
-        const rawReviewsCount = m2?.[1] || m1?.[1] || m3?.[1] || null;
-        if (rawReviewsCount) lead.reviewsCount = parseInt(rawReviewsCount);
-        console.log(`reviewsCount for ${lead.name}:`, lead.reviewsCount);
-
         // Phone, website & reviews count from detail panel
         const detail = await page.evaluate(() => {
           const d = {};
@@ -173,29 +176,12 @@ try {
           const websiteEl = document.querySelector('a[data-item-id="authority"]');
           if (websiteEl) d.website = websiteEl.getAttribute('href') || '';
 
-          // reviewsCount — from JSON-LD structured data (most reliable)
-          const jsonLd = document.querySelector('script[type="application/ld+json"]');
-          if (jsonLd) {
-            try {
-              const data = JSON.parse(jsonLd.textContent);
-              if (data.aggregateRating?.reviewCount) {
-                d.reviewsCount = parseInt(data.aggregateRating.reviewCount);
-              }
-            } catch {}
-          }
-
-          // Fallback — scan all text for "X reviews" pattern
-          if (!d.reviewsCount) {
-            const allText = document.body?.innerText || '';
-            const m = allText.match(/\b([\d,]+)\s+reviews?\b/i);
-            if (m) d.reviewsCount = parseInt(m[1].replace(/,/g, ''));
-          }
+          // reviewsCount captured from search card — no overwrite needed
 
           return d;
         });
         if (detail.phone) lead.phone = detail.phone;
         if (detail.website) lead.website = detail.website;
-        if (detail.reviewsCount && detail.reviewsCount > 0) lead.reviewsCount = detail.reviewsCount;
 
         // Opening hours detail
         const hours = await page.evaluate(() => {

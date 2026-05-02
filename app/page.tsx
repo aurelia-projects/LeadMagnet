@@ -342,7 +342,7 @@ export default function Home() {
             <div><span className="t-comment"># Scraping Google Maps headlessly...</span></div>
             <div className="t-out">🗺 Opened Maps · Searching &quot;dentist Austin TX&quot;</div>
             <div className="t-out">📜 Scrolled · Loaded <span className="t-val">100</span> listings</div>
-            <div className="t-out">✉ Found <span className="t-val">87</span> business listings</div>
+            <div className="t-out">✉ Extracting business data...</div>
             <br />
             <div className="t-success">✅ leads_dentist_austin.csv (100 rows)</div>
             <br />
@@ -518,7 +518,7 @@ export default function Home() {
       {/* STATS */}
       <div className="stats-section">
         <div className="stats-grid">
-          {[{ n: '100', l: 'Leads per run' }, { n: '10', l: 'Data fields per lead' }, { n: '95%+', l: 'Data field accuracy' }, { n: '∞', l: 'Locations worldwide' }].map((s, i) => (
+          {[{ n: '100', l: 'Leads per run' }, { n: '10', l: 'Data fields per lead' }, { n: '100+', l: 'Countries supported' }, { n: '∞', l: 'Locations worldwide' }].map((s, i) => (
             <div className="stat-item" key={i}><div className="stat-num">{s.n}</div><div className="stat-label">{s.l}</div></div>
           ))}
         </div>

@@ -38,8 +38,8 @@ LeadMagnet is optimized to rank on these search terms:
 | API Keys Required | ❌ None | ✅ Required |
 | Rate Limits | ❌ None | ⚠️ Strict limits |
 | Pricing | 💰 Free / Open Source | 💸 Per-request or subscription |
-| Email Extraction | ✅ Included | ❌ Paid add-on |
-| Review Scraping | ✅ Full depth | ⚠️ Partial |
+| Email Extraction | ⚠️ When available | ❌ Paid add-on |
+| Review Scraping | ✅ When available | ⚠️ Partial |
 | Images | ✅ Included | ⚠️ Extra cost |
 | Scheduling | ✅ Free via API | 💸 Paid feature |
 | Data Enrichment | ✅ Built-in | 💸 Add-on pricing |
@@ -56,7 +56,7 @@ Every lead returns structured, CRM-ready data:
 | Field | Description |
 |-------|-------------|
 | `name` | Business name / title |
-| `email` | Email address (from website crawl, requires proxy) |
+| `email` | Email address (found on ~20-30% of businesses) |
 | `phone` | Phone number |
 | `website` | Website URL |
 | `address` | Full street address |
@@ -136,18 +136,7 @@ Remote / Global
 
 | Filter | What It Does |
 |--------|-------------|
-| ⭐ Minimum rating | Only businesses above N stars |
-| 🕒 Open now | Filter by real-time availability |
 | 🏷 Category | Narrow to specific business types |
-| 📍 Radius | Geo-search within X km |
-| 🌐 Website required | Only businesses with a website |
-| 📸 Has images | Only businesses with photos |
-| 🧾 Review count min | Filter by social proof level |
-| 🔗 URL mode | Scrape from direct Maps URLs |
-| 🛰 Polygon | Custom geo-fence via GeoJSON |
-| 📡 Batch mode | Run multiple searches at once |
-
-> Filters marked as paid add-ons in other tools are **completely free** here.
 
 ---
 
@@ -362,13 +351,13 @@ LeadMagnet uses intelligent Playwright-based browsing with request pacing to avo
 Playwright is **more modern, faster, and significantly more reliable** for dynamic web applications like Google Maps. Multi-browser support, better anti-detection, faster rendering. It's the right tool for this job.
 
 ### Can I extract emails?
-**Requires proxy upgrade.** Email extraction works by visiting each business website, which requires Apify proxy access. On the free tier, external HTTP is blocked. Upgrade your Apify plan to enable this feature.
+Email extraction visits each business website to find contact addresses. This works when running locally or with Apify proxy enabled. On the free Apify tier with LIMITED_PERMISSIONS, outbound HTTP to external domains is restricted. Upgrade to an Apify paid plan and enable proxy to activate email extraction.
 
 ### Can I use it commercially?
 **Yes.** MIT license means commercial use, SaaS integration, agency workflows, and enterprise deployments are all permitted.
 
 ### How fast is it?
-On Apify with 2GB memory: **~20 leads per minute** with full enrichment. Bump to 8GB for parallel browsing and faster bulk operations.
+On Apify with 2GB memory: **~20 leads per minute**. Email extraction requires proxy configuration. Bump to 8GB for parallel browsing and faster bulk operations.
 
 ### What integrations are supported?
 - **Webhooks** — trigger actions on run completion

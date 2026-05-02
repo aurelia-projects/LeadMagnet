@@ -1,9 +1,9 @@
 /**
  * LeadMagnet — Apify Actor
  * Google Maps Business Lead Scraper
- * 
+ *
  * Free, open source. No API keys needed.
- * Version 0.3.0 — Reviews, amenities, coordinates, images, social profiles
+ * Version 0.4.0 — Fixed reviewsCount, clean websites, reliable enrichment
  */
 
 import { Actor } from 'apify';
@@ -42,9 +42,7 @@ try {
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(3000);
 
-  await Promise.race([
-    page.waitForSelector('.Nv2PK', { timeout: 15000 }).catch(() => {}),
-  ]);
+  await page.waitForSelector('.Nv2PK', { timeout: 15000 }).catch(() => {});
 
   // Scroll to load results
   for (let i = 0; i < 10 && leads.length < maxResults; i++) {
@@ -61,16 +59,29 @@ try {
         if (!name || items.find(i => i.name === name)) return;
 
         const fullText = card.textContent || '';
-        const ratingEl = card.querySelector('[aria-label*="stars"]');
-        const rating = ratingEl?.getAttribute('aria-label')?.match(/[\d.]+/)?.[0];
         const link = card.querySelector('a.hfpxzc');
         const placeUrl = link?.getAttribute('href') || '';
         const imgEl = card.querySelector('img');
         const priceEl = card.querySelector('[aria-label*="Price"]');
 
+        // Rating
+        const ratingEl = card.querySelector('[aria-label*="stars"]');
+        const ratingLabel = ratingEl?.getAttribute('aria-label') || '';
+        const rating = ratingLabel.match(/[\d.]+/)?.[0];
+
+        // reviewsCount — the stars aria-label is formatted as "4.9 stars 235 reviews"
+        // This is the most reliable source on the search card
+        const reviewsFromStars = ratingLabel.match(/(\d[\d,]*)\s*reviews?/i)?.[1]?.replace(/,/g, '');
+
+        // Fallback: look for a dedicated reviews element on the card
+        const reviewsEl = card.querySelector('[aria-label*="reviews" i]');
+        const reviewsFromEl = reviewsEl?.getAttribute('aria-label')?.match(/(\d[\d,]*)\s*reviews?/i)?.[1]?.replace(/,/g, '');
+
+        const rCount = reviewsFromStars || reviewsFromEl || null;
+
         // Opening hours
         const hours = [];
-        const hourMatch = fullText.match(/(Open|Closed)(.+(?:AM|PM|am|pm))?/);
+        const hourMatch = fullText.match(/(Open|Closed)([^·]*(?:AM|PM|am|pm))?/);
         if (hourMatch) hours.push(hourMatch[0].trim());
 
         // Amenities from tooltips
@@ -80,61 +91,44 @@ try {
           if (t) amens.push(t);
         });
 
-        // Review count — visible as "(235)" next to the rating on the card
-        const cardText = card.textContent || '';
-
-        // Pattern 1: number in parentheses after rating "(235)"
-        const parenMatch = cardText.match(/\((\d[\d,]*)\)/);
-
-        // Pattern 2: aria-label on rating element sometimes has "235 reviews"
-        const ratingAriaLabel = card.querySelector('[aria-label*="star"]')?.getAttribute('aria-label') || '';
-        const ariaMatch = ratingAriaLabel.match(/([\d,]+)\s*review/i);
-
-        const rCount = ariaMatch?.[1]?.replace(/,/g, '')
-          || parenMatch?.[1]?.replace(/,/g, '')
-          || null;
-
-        // Category from text after rating
+        // Category — text between rating number and first ·
         const category = (() => {
-          const m = fullText.match(/\d\.\d\s*([A-Za-z\s&-]+?)(?:\s*·\s*|\s*\d|\s*$)/);
+          const m = fullText.match(/\d\.\d\s*([A-Za-z\s&'-]+?)(?:\s*·|\s*\d|\s*$)/);
           return m?.[1]?.trim() || '';
         })();
 
-        // Address
+        // Address — segment after · that contains a digit but no AM/PM
         const address = (() => {
           const parts = fullText.split('·').map(s => s.trim());
           for (let i = 1; i < parts.length; i++) {
             const clean = parts[i].replace(/[\uE934\uE935\uE938\uE940]/g, '').trim();
-            if (clean.length > 10 && /\d/.test(clean) && !clean.includes('AM') && !clean.includes('PM')) {
-              return clean.replace(/(Closed|Open)(\s*·\s*Opens.*|\s*\d+:\d+.*)?$/, '').trim();
+            if (clean.length > 5 && /\d/.test(clean) && !clean.match(/AM|PM/i)) {
+              return clean.replace(/(Closed|Open)(\s*·\s*Opens.*|\s*\d+:\d+.*)?$/i, '').trim();
             }
           }
           return '';
         })();
 
-        // Coordinates from URL
+        // Coordinates from placeUrl
         const coords = (() => {
           const m = placeUrl.match(/!3d(-?[\d.]+)!4d(-?[\d.]+)/);
-          return m ? { lat: parseFloat(m[1]), lng: parseFloat(m[2]) } : { lat: 0, lng: 0 };
+          return m ? { lat: parseFloat(m[1]), lng: parseFloat(m[2]) } : { lat: null, lng: null };
         })();
 
         items.push({
           name,
           category,
           address,
-          rating: rating ? parseFloat(rating) : 0,
+          rating: rating ? parseFloat(rating) : null,
           reviewsCount: rCount ? parseInt(rCount) : null,
           placeUrl,
-          placeId: placeUrl.match(/data=!4m7.*?1s([^!]+)/)?.[1] || '',
-          imageUrl: (imgEl)?.src || '',
+          placeId: placeUrl.match(/1s([^!]+)!8m/)?.[1] || '',
+          imageUrl: imgEl?.src || '',
           openingHours: hours,
           amenities: amens,
           priceRange: priceEl?.getAttribute('aria-label')?.replace('Price: ', '') || '',
           lat: coords.lat,
           lng: coords.lng,
-          socialProfiles: {
-            instagram: '', facebook: '', twitter: '',
-          },
         });
       });
       return items;
@@ -147,99 +141,115 @@ try {
     }
   }
 
-  // Trim to maxResults before enrich/email to avoid wasting time
+  // Trim to maxResults
   leads.splice(maxResults);
 
   // ============ ENRICH EACH PLACE ============
-  // Always enrich to capture website, phone, reviews count from detail panel
   for (let idx = 0; idx < leads.length; idx++) {
-      const lead = leads[idx];
-      console.log(`Enrich ${idx + 1}/${leads.length}: ${lead.name}`);
+    const lead = leads[idx];
+    console.log(`Enrich ${idx + 1}/${leads.length}: ${lead.name}`);
 
+    try {
+      if (!lead.placeUrl) continue;
+      await page.goto(lead.placeUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+      await page.waitForTimeout(4000);
       try {
-        if (!lead.placeUrl) continue;
-        await page.goto(lead.placeUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
-        // Wait for dynamic content — Maps SPA loads business data async
-        await page.waitForTimeout(5000);
-        // Also wait for a business-specific element if it appears
-        try { await page.waitForSelector('[data-item-id^="phone:"], button[data-item-id^="phone:"]', { timeout: 3000 }); } catch {}
+        await page.waitForSelector('button[data-item-id^="phone:tel:"]', { timeout: 4000 });
+      } catch {}
 
-        // Phone, website & reviews count from detail panel
-        const detail = await page.evaluate(() => {
-          const d = {};
+      const detail = await page.evaluate(() => {
+        const d = {};
 
-          // Phone — button with data-item-id="phone:tel:+1xxxxxxxxxx"
-          const phoneBtn = document.querySelector('button[data-item-id^="phone:tel:"]');
-          if (phoneBtn) d.phone = phoneBtn.getAttribute('data-item-id')?.replace('phone:tel:', '') || '';
+        // Phone
+        const phoneBtn = document.querySelector('button[data-item-id^="phone:tel:"]');
+        if (phoneBtn) d.phone = phoneBtn.getAttribute('data-item-id')?.replace('phone:tel:', '') || '';
 
-          // Website — always stored in a[data-item-id="authority"]
-          const websiteEl = document.querySelector('a[data-item-id="authority"]');
-          if (websiteEl) d.website = websiteEl.getAttribute('href') || '';
+        // Website — data-item-id="authority" is always the business website
+        const websiteEl = document.querySelector('a[data-item-id="authority"]');
+        if (websiteEl) d.website = websiteEl.getAttribute('href') || '';
 
-          // reviewsCount captured from search card — no overwrite needed
+        // reviewsCount — try the header area which shows "235 reviews"
+        // The detail page header contains the full rating line
+        const headerText = document.querySelector('div[jsaction*="rating"]')?.textContent
+          || document.querySelector('[data-review-count]')?.getAttribute('data-review-count')
+          || '';
+        const headerMatch = headerText.match(/(\d[\d,]*)\s*reviews?/i);
+        if (headerMatch) d.reviewsCount = parseInt(headerMatch[1].replace(/,/g, ''));
 
-          return d;
-        });
-        if (detail.phone) lead.phone = detail.phone;
-        if (detail.website) lead.website = detail.website;
-
-        // Opening hours detail
-        const hours = await page.evaluate(() => {
-          const h = [];
-          const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-          document.querySelectorAll('[aria-label*="hour"], .A1pRfd, .YMlIz').forEach(el => {
-            const t = el.textContent?.trim();
-            if (t && (days.some(d => t.includes(d)) || t.includes('AM') || t.includes('PM'))) h.push(t);
-          });
-          return h;
-        });
-        if (hours.length) lead.openingHoursDetail = hours;
-
-        // Reviews
-        if (extractReviews && maxReviewsPerPlace > 0) {
-          await page.evaluate(() => {
-            const tab = document.querySelector('[role="tab"][aria-label*="review"], button[aria-label*="review"]');
-            if (tab) (tab).click();
-          });
-          await page.waitForTimeout(2000);
-          
-          for (let s = 0; s < 3; s++) {
-            await page.evaluate(() => {
-              const rs = document.querySelector('.m6QErb[role="region"], .lwmHm');
-              if (rs) rs.scrollBy(0, 400); else window.scrollBy(0, 300);
-            });
-            await page.waitForTimeout(1500);
+        // Fallback: scan all aria-labels for review count
+        if (!d.reviewsCount) {
+          const allEls = document.querySelectorAll('[aria-label]');
+          for (const el of allEls) {
+            const label = el.getAttribute('aria-label') || '';
+            const m = label.match(/^([\d,]+)\s+reviews?$/i);
+            if (m) { d.reviewsCount = parseInt(m[1].replace(/,/g, '')); break; }
           }
-
-          const reviews = await page.evaluate((max) => {
-            const r = [];
-            document.querySelectorAll('.jftiEf, [data-review-id]').forEach(card => {
-              if (r.length >= max) return;
-              const name = card.querySelector('.d4r55, .TSUosb')?.textContent?.trim();
-              if (!name || r.find(ri => ri.reviewerName === name)) return;
-              r.push({
-                reviewerName: name,
-                rating: parseFloat(card.querySelector('[aria-label*="stars"]')?.getAttribute('aria-label')?.match(/[\d.]+/)?.[0] || '0'),
-                text: card.querySelector('.wiI7pd, .MyEned')?.textContent?.trim() || '',
-                publishDate: card.querySelector('.rsqaWe, .TI2lzfb')?.textContent?.trim() || '',
-                likes: parseInt(card.querySelector('.C8e1Kd')?.textContent?.replace(/[^0-9]/g, '') || '0'),
-              });
-            });
-            return r;
-          }, maxReviewsPerPlace);
-          if (reviews.length) lead.reviews = reviews;
         }
 
-      } catch (err) {
-        console.log(`  Skip enrich for ${lead.name}: ${err.message}`);
-      }
-    }
+        return d;
+      });
 
-  // ============ EMAILS ===
+      if (detail.phone) lead.phone = detail.phone;
+      if (detail.website) lead.website = detail.website;
+      // Only overwrite reviewsCount from detail page if card didn't get it
+      if (detail.reviewsCount && !lead.reviewsCount) lead.reviewsCount = detail.reviewsCount;
+
+      // Opening hours detail
+      const hours = await page.evaluate(() => {
+        const h = [];
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        document.querySelectorAll('[aria-label*="hour" i], .A1pRfd, .YMlIz').forEach(el => {
+          const t = el.textContent?.trim();
+          if (t && (days.some(d => t.includes(d)) || t.match(/AM|PM/i))) h.push(t);
+        });
+        return [...new Set(h)]; // deduplicate
+      });
+      if (hours.length) lead.openingHoursDetail = hours;
+
+      // Reviews
+      if (extractReviews && maxReviewsPerPlace > 0) {
+        await page.evaluate(() => {
+          const tab = document.querySelector('[role="tab"][aria-label*="review" i], button[aria-label*="review" i]');
+          if (tab) tab.click();
+        });
+        await page.waitForTimeout(2000);
+
+        for (let s = 0; s < 3; s++) {
+          await page.evaluate(() => {
+            const rs = document.querySelector('.m6QErb[role="region"], .lwmHm');
+            if (rs) rs.scrollBy(0, 400); else window.scrollBy(0, 300);
+          });
+          await page.waitForTimeout(1500);
+        }
+
+        const reviews = await page.evaluate((max) => {
+          const r = [];
+          document.querySelectorAll('.jftiEf, [data-review-id]').forEach(card => {
+            if (r.length >= max) return;
+            const name = card.querySelector('.d4r55, .TSUosb')?.textContent?.trim();
+            if (!name || r.find(ri => ri.reviewerName === name)) return;
+            r.push({
+              reviewerName: name,
+              rating: parseFloat(card.querySelector('[aria-label*="stars"]')?.getAttribute('aria-label')?.match(/[\d.]+/)?.[0] || '0'),
+              text: card.querySelector('.wiI7pd, .MyEned')?.textContent?.trim() || '',
+              publishDate: card.querySelector('.rsqaWe, .TI2lzfb')?.textContent?.trim() || '',
+              likes: parseInt(card.querySelector('.C8e1Kd')?.textContent?.replace(/[^0-9]/g, '') || '0'),
+            });
+          });
+          return r;
+        }, maxReviewsPerPlace);
+        if (reviews.length) lead.reviews = reviews;
+      }
+
+    } catch (err) {
+      console.log(`  Skip enrich for ${lead.name}: ${err.message}`);
+    }
+  }
+
+  // ============ EMAILS ============
   if (extractEmails) {
-    console.log('⚠️ Email extraction not available in current permission level');
-    // To enable: upgrade Apify plan and configure proxy settings
-    // External HTTP blocked under LIMITED_PERMISSIONS sandbox
+    console.log('⚠️  Email extraction not available under LIMITED_PERMISSIONS — skipping.');
+    console.log('    To enable: upgrade Apify plan and add proxy configuration.');
   }
 
 } catch (err) {
@@ -259,7 +269,7 @@ for (const lead of leads) {
     website: lead.website ? lead.website.split('?')[0] : null,
     email: lead.email || null,
     rating: lead.rating || null,
-    reviewsCount: lead.reviewsCount > 0 ? lead.reviewsCount : null,
+    reviewsCount: (lead.reviewsCount && lead.reviewsCount > 0) ? lead.reviewsCount : null,
     reviews: lead.reviews?.length ? lead.reviews.slice(0, maxReviewsPerPlace) : null,
     priceRange: lead.priceRange || null,
     openingHours: lead.openingHours?.length ? lead.openingHours : null,

@@ -417,7 +417,7 @@ export default function Home() {
               { num: '01 / 05', icon: '🗺', title: 'Open Google Maps', desc: 'Launches a headless Playwright browser and navigates to Google Maps with your search query.' },
               { num: '02 / 05', icon: '📜', title: 'Scroll & load listings', desc: 'Automatically scrolls through the results panel until up to 100 listings are visible.' },
               { num: '03 / 05', icon: '🔬', title: 'Extract every data point', desc: 'Parses name, address, phone, website, rating, review count, category, and GPS coordinates.' },
-              { num: '04 / 05', icon: '✉', title: 'Visit sites for emails', desc: 'Visits each business website and crawls for email addresses (requires Apify proxy).' },
+              { num: '04 / 05', icon: '✉', title: 'Visit sites for emails', desc: 'Visits each business website for emails (requires Apify proxy — disabled on free tier).' },
               { num: '05 / 05', icon: '📤', title: 'Export clean CSV', desc: 'Outputs a structured CSV — ready to import into any CRM, spreadsheet, or pipeline.' },
             ].map((step, i) => (
               <div className="step-card" key={i}>
@@ -683,7 +683,7 @@ items.forEach(lead => {
       {/* CTA */}
       <section className="cta-section">
         <h2 className="cta-title reveal">Ready to <span className="gradient-text">capture leads</span>?</h2>
-        <p className="cta-sub reveal">No scraping setup. No proxies. No maintenance. Just a search and a CSV.</p>
+        <p className="cta-sub reveal">No scraping setup. No API keys. No rate limits. Just a search and a CSV.</p>
         <div className="cta-actions reveal">
           <a href="https://apify.com/zakbuildsai/LeadMagnet" className="btn-primary">Get it on Apify →</a>
           <a href="#dev" className="btn-secondary">View the API docs</a>

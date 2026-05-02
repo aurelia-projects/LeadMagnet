@@ -349,23 +349,10 @@ interface EnrichOpts {
 }
 
 async function enrichPlace(page: Page, placeName: string, lead: Lead, opts: EnrichOpts) {
-  // Try clicking the place card to open detail panel
+  // Navigate directly to the place detail page
   try {
-    const clicked = await page.evaluate((name: string) => {
-      const cards = document.querySelectorAll('.Nv2PK');
-      for (const card of cards) {
-        if (card.getAttribute('aria-label') === name) {
-          const link = card.querySelector('a.hfpxzc');
-          if (link) {
-            (link as HTMLElement).click();
-            return true;
-          }
-        }
-      }
-      return false;
-    }, placeName);
-
-    if (!clicked) return;
+    if (!lead.placeUrl) return;
+    await page.goto(lead.placeUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
     await page.waitForTimeout(3000);
 
     // Extract phone and website from the detail panel
@@ -373,16 +360,12 @@ async function enrichPlace(page: Page, placeName: string, lead: Lead, opts: Enri
       const data: any = {};
       
       // Phone button
-      const phoneBtn = document.querySelector('[data-item-id*="phone"]');
-      if (phoneBtn) {
-        data.phone = phoneBtn.getAttribute('data-item-id')?.replace('phone:tel:', '') || phoneBtn.textContent?.trim() || '';
-      }
+      const phoneBtn = document.querySelector('button[data-item-id^="phone:tel:"]');
+      if (phoneBtn) data.phone = phoneBtn.getAttribute('data-item-id')?.replace('phone:tel:', '') || '';
       
-      // Website button
-      const websiteBtn = document.querySelector('[data-item-id*="website"]');
-      if (websiteBtn) {
-        data.website = websiteBtn.getAttribute('href') || websiteBtn.textContent?.trim() || '';
-      }
+      // Website
+      const websiteEl = document.querySelector('a[data-item-id="authority"]');
+      if (websiteEl) data.website = websiteEl.getAttribute('href') || '';
 
       // Full opening hours from detail panel
       const hours: string[] = [];
@@ -402,12 +385,6 @@ async function enrichPlace(page: Page, placeName: string, lead: Lead, opts: Enri
         if (t && !cats.includes(t)) cats.push(t);
       });
       if (cats.length) data.categories = cats;
-
-      // Website from detail panel if not already found
-      if (!data.website) {
-        const wl = document.querySelector('a[data-item-id*="website"]');
-        data.website = wl?.getAttribute('href') || '';
-      }
 
       // Address detail
       const addrEl = document.querySelector('[data-item-id="address"]');

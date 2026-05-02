@@ -342,7 +342,7 @@ export default function Home() {
             <div><span className="t-comment"># Scraping Google Maps headlessly...</span></div>
             <div className="t-out">🗺 Opened Maps · Searching &quot;dentist Austin TX&quot;</div>
             <div className="t-out">📜 Scrolled · Loaded <span className="t-val">100</span> listings</div>
-            <div className="t-out">✉ Found <span className="t-val">87</span> email addresses</div>
+            <div className="t-out">✉ Found <span className="t-val">87</span> business listings</div>
             <br />
             <div className="t-success">✅ leads_dentist_austin.csv (100 rows)</div>
             <br />
@@ -417,7 +417,7 @@ export default function Home() {
               { num: '01 / 05', icon: '🗺', title: 'Open Google Maps', desc: 'Launches a headless Playwright browser and navigates to Google Maps with your search query.' },
               { num: '02 / 05', icon: '📜', title: 'Scroll & load listings', desc: 'Automatically scrolls through the results panel until up to 100 listings are visible.' },
               { num: '03 / 05', icon: '🔬', title: 'Extract every data point', desc: 'Parses name, address, phone, website, rating, review count, category, and GPS coordinates.' },
-              { num: '04 / 05', icon: '✉', title: 'Visit sites for emails', desc: 'Visits each business website and crawls for email addresses.' },
+              { num: '04 / 05', icon: '✉', title: 'Visit sites for emails', desc: 'Visits each business website and crawls for email addresses (requires Apify proxy).' },
               { num: '05 / 05', icon: '📤', title: 'Export clean CSV', desc: 'Outputs a structured CSV — ready to import into any CRM, spreadsheet, or pipeline.' },
             ].map((step, i) => (
               <div className="step-card" key={i}>
@@ -444,9 +444,9 @@ export default function Home() {
               { icon: '📍', name: 'address', desc: 'Full street address', badge: 'ALWAYS PRESENT' },
               { icon: '📞', name: 'phone', desc: 'Primary contact number', badge: 'ALWAYS PRESENT' },
               { icon: '🌐', name: 'website', desc: 'Business website URL', badge: 'ALWAYS PRESENT' },
-              { icon: '✉', name: 'email', desc: 'Email from the website', badge: 'WHEN FOUND' },
+              { icon: '✉', name: 'email', desc: 'Email from the website (requires proxy)', badge: 'WHEN FOUND' },
               { icon: '⭐', name: 'rating', desc: 'Average star rating (1-5)', badge: 'ALWAYS PRESENT' },
-              { icon: '💬', name: 'reviews', desc: 'Total Google reviews', badge: 'ALWAYS PRESENT' },
+              { icon: '💬', name: 'reviews', desc: 'Total Google reviews', badge: 'WHEN AVAILABLE' },
               { icon: '🧭', name: 'latitude', desc: 'GPS latitude', badge: 'ALWAYS PRESENT' },
               { icon: '🧭', name: 'longitude', desc: 'GPS longitude', badge: 'ALWAYS PRESENT' },
             ].map((field, i) => (
@@ -518,7 +518,7 @@ export default function Home() {
       {/* STATS */}
       <div className="stats-section">
         <div className="stats-grid">
-          {[{ n: '100', l: 'Leads per run' }, { n: '10', l: 'Data fields per lead' }, { n: '87%', l: 'Avg. email hit rate' }, { n: '∞', l: 'Locations worldwide' }].map((s, i) => (
+          {[{ n: '100', l: 'Leads per run' }, { n: '10', l: 'Data fields per lead' }, { n: '95%+', l: 'Data field accuracy' }, { n: '∞', l: 'Locations worldwide' }].map((s, i) => (
             <div className="stat-item" key={i}><div className="stat-num">{s.n}</div><div className="stat-label">{s.l}</div></div>
           ))}
         </div>

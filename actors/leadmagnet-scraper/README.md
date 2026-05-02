@@ -56,13 +56,13 @@ Every lead returns structured, CRM-ready data:
 | Field | Description |
 |-------|-------------|
 | `name` | Business name / title |
-| `email` | Email address (from website crawl) |
+| `email` | Email address (from website crawl, requires proxy) |
 | `phone` | Phone number |
 | `website` | Website URL |
 | `address` | Full street address |
 | `category` | Business category (dentist, restaurant, agency, etc.) |
 | `rating` | Google Maps star rating (e.g. 4.7) |
-| `reviewsCount` | Number of reviews |
+| `reviewsCount` | Number of reviews (when available on detail page) |
 | `reviews` | Full review text, ratings, dates, reviewer profiles |
 | `priceRange` | Price bracket ($, $$, $$$) |
 | `openingHours` | Business hours per day |
@@ -132,7 +132,7 @@ Remote / Global
 100 / 1,000 / 5,000+ (no hard limit)
 ```
 
-### 🧩 Advanced Filters (Optional)
+### 🧩 Filters
 
 | Filter | What It Does |
 |--------|-------------|
@@ -165,7 +165,7 @@ Most scrapers use **Puppeteer** (older, slower, more memory). LeadMagnet uses **
 
 ### 🎯 Built for Lead Generation
 Every feature is designed to fill your CRM:
-- **Email extraction** — automatically crawls each business website for contact emails
+- **Email extraction** — crawls business websites for contacts (requires Apify proxy upgrade)
 - **Review extraction** — full content with ratings, dates, reviewer metadata
 - **Amenity detection** — surfaces features like wheelchair accessible, free wifi, parking
 - **Social profile discovery** — Instagram, Facebook, Twitter links when available
@@ -194,9 +194,9 @@ Use specific, distinct business types for best results:
 |--------|-------------|
 | **Free text** — `"Austin TX"` | Quick one-off searches |
 | **City + state** — `"London UK"` | Single city targeting |
-| **Custom polygon** — GeoJSON | Precise area boundaries |
+
 | **Direct URL** — maps URL | Exact search reproduction |
-| **Place ID** — Google ID | Pre-identified locations |
+
 
 ### Category Filtering
 Google Maps has **thousands of categories**. LeadMagnet lets you filter with precision — include all relevant synonyms so nothing is missed (e.g., "divorce lawyer", "divorce attorney", "family law" are all separate categories).
@@ -362,13 +362,13 @@ LeadMagnet uses intelligent Playwright-based browsing with request pacing to avo
 Playwright is **more modern, faster, and significantly more reliable** for dynamic web applications like Google Maps. Multi-browser support, better anti-detection, faster rendering. It's the right tool for this job.
 
 ### Can I extract emails?
-**Yes.** When emails are publicly available on business websites or Google Maps listings, LeadMagnet finds them. This is included — not a paid add-on.
+**Requires proxy upgrade.** Email extraction works by visiting each business website, which requires Apify proxy access. On the free tier, external HTTP is blocked. Upgrade your Apify plan to enable this feature.
 
 ### Can I use it commercially?
 **Yes.** MIT license means commercial use, SaaS integration, agency workflows, and enterprise deployments are all permitted.
 
 ### How fast is it?
-On Apify with 2GB memory: **50+ leads per minute** with full enrichment. Bump to 8GB for parallel browsing and faster bulk operations.
+On Apify with 2GB memory: **~20 leads per minute** with full enrichment. Bump to 8GB for parallel browsing and faster bulk operations.
 
 ### What integrations are supported?
 - **Webhooks** — trigger actions on run completion

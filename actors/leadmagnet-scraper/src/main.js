@@ -74,7 +74,10 @@ try {
         const hours = [];
         const hourMatch = fullText.match(/((?:Open|Closed)[^\n]*)/i);
         if (hourMatch) {
-          const cleaned = hourMatch[0].replace(/\s*(Book online|Order online|Menu|Website)\s*$/i, '').trim();
+          let cleaned = hourMatch[0]
+            .replace(/\s{2,}.*/s, '')
+            .replace(/\s*(Book online|Order online|Menu|Website|Visit Site|Schedule|Call)\s*.*/i, '')
+            .trim();
           if (cleaned) hours.push(cleaned);
         }
 
@@ -178,6 +181,16 @@ try {
             const text = el.textContent?.trim() || '';
             const m = text.match(/^([\d,]+)\s+reviews?$/i);
             if (m) { d.reviewsCount = parseInt(m[1].replace(/,/g, '')); break; }
+          }
+        }
+
+        // Fallback 2: scan body innerText for "N reviews"
+        if (!d.reviewsCount) {
+          const bodyText = document.body?.innerText || '';
+          const m = bodyText.match(/\b(\d[\d,]*)\s+reviews?\b/i);
+          if (m) {
+            const count = parseInt(m[1].replace(/,/g, ''));
+            if (count > 0 && count < 500000) d.reviewsCount = count;
           }
         }
 

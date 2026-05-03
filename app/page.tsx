@@ -198,7 +198,6 @@ export default function Home() {
     }
 
     const feedInterval = setInterval(addFeedItem, 3000);
-    // Add initial items
     for (let i = 0; i < 4; i++) setTimeout(addFeedItem, i * 400);
 
     return () => {
@@ -323,7 +322,7 @@ export default function Home() {
           <span className="title-line2">into a lead machine.</span>
         </h1>
         <p className="hero-sub">
-          Enter a <strong>business type + location</strong>. Get a clean CSV with names, phones, addresses, emails, ratings — ready for your CRM. <strong>Up to 100 leads per run.</strong>
+          Enter a <strong>business type + location</strong>. Get a clean CSV with names, phones, addresses, ratings — ready for your CRM. <strong>Up to 100 leads per run.</strong>
         </p>
         <div className="hero-actions">
           <a href="#demo" className="btn-primary"><span>▶</span> Try the demo</a>
@@ -342,12 +341,12 @@ export default function Home() {
             <div><span className="t-comment"># Scraping Google Maps headlessly...</span></div>
             <div className="t-out">🗺 Opened Maps · Searching &quot;dentist Austin TX&quot;</div>
             <div className="t-out">📜 Scrolled · Loaded <span className="t-val">100</span> listings</div>
-            <div className="t-out">✉ Extracting business data...</div>
+            <div className="t-out">🔬 Extracting business data...</div>
             <br />
             <div className="t-success">✅ leads_dentist_austin.csv (100 rows)</div>
             <br />
-            <div className="t-row"><span className="t-comment">Austin Smile Studio</span> ⭐ <span className="t-key">4.9</span> 📧 <span className="t-str">hello@austinsmile.com</span></div>
-            <div className="t-row"><span className="t-comment">Capital City Dental</span> ⭐ <span className="t-key">4.7</span> 📧 <span className="t-str">info@capcitydental.com</span></div>
+            <div className="t-row"><span className="t-comment">Austin Smile Studio</span> ⭐ <span className="t-key">4.9</span> 📞 <span className="t-str">+1 512-555-0101</span></div>
+            <div className="t-row"><span className="t-comment">Capital City Dental</span> ⭐ <span className="t-key">4.7</span> 📞 <span className="t-str">+1 512-555-0182</span></div>
           </div>
         </div>
         <div className="apify-badge">Available on <strong>Apify Marketplace</strong> · Runs in the cloud · No setup required</div>
@@ -356,10 +355,10 @@ export default function Home() {
       {/* TICKER */}
       <div className="ticker-wrap">
         <div className="ticker-inner">
-          {['🏢 Business Name', '📍 Address', '📞 Phone Number', '⭐ Rating + Reviews', '🌐 Website URL', '✉ Email Address', '📂 Category', '🗺 Lat / Lng'].map((item, i) => (
+          {['🏢 Business Name', '📍 Address', '📞 Phone Number', '⭐ Rating + Reviews', '🌐 Website URL', '✉ Email (when found)', '📂 Category', '🗺 Lat / Lng'].map((item, i) => (
             <span className="ticker-item" key={i}>{item} <span>✓</span></span>
           ))}
-          {['🏢 Business Name', '📍 Address', '📞 Phone Number', '⭐ Rating + Reviews', '🌐 Website URL', '✉ Email Address', '📂 Category', '🗺 Lat / Lng'].map((item, i) => (
+          {['🏢 Business Name', '📍 Address', '📞 Phone Number', '⭐ Rating + Reviews', '🌐 Website URL', '✉ Email (when found)', '📂 Category', '🗺 Lat / Lng'].map((item, i) => (
             <span className="ticker-item" key={i+8}>{item} <span>✓</span></span>
           ))}
         </div>
@@ -416,8 +415,8 @@ export default function Home() {
             {[
               { num: '01 / 05', icon: '🗺', title: 'Open Google Maps', desc: 'Launches a headless Playwright browser and navigates to Google Maps with your search query.' },
               { num: '02 / 05', icon: '📜', title: 'Scroll & load listings', desc: 'Automatically scrolls through the results panel until up to 100 listings are visible.' },
-              { num: '03 / 05', icon: '🔬', title: 'Extract every data point', desc: 'Parses name, address, phone, website, rating, review count, category, and GPS coordinates.' },
-              { num: '04 / 05', icon: '✉', title: 'Visit sites for emails', desc: 'Visits each business website for emails (requires Apify proxy — disabled on free tier).' },
+              { num: '03 / 05', icon: '🔬', title: 'Extract every data point', desc: 'Parses name, address, phone, website, rating, category, and GPS coordinates from each listing.' },
+              { num: '04 / 05', icon: '✉', title: 'Visit sites for emails', desc: 'Visits each business website for emails when available (requires Apify proxy — disabled on free tier).' },
               { num: '05 / 05', icon: '📤', title: 'Export clean CSV', desc: 'Outputs a structured CSV — ready to import into any CRM, spreadsheet, or pipeline.' },
             ].map((step, i) => (
               <div className="step-card" key={i}>
@@ -436,7 +435,7 @@ export default function Home() {
         <div className="section-inner">
           <div className="section-label">Output fields</div>
           <h2 className="section-title reveal">Everything you need.<br />Nothing you don't.</h2>
-          <p className="section-sub reveal">Every row in your CSV export contains 10 structured fields — clean, consistent, CRM-ready.</p>
+          <p className="section-sub reveal">Every row in your CSV export contains structured fields — clean, consistent, CRM-ready.</p>
           <div className="fields-grid reveal">
             {[
               { icon: '🏢', name: 'name', desc: 'Full business name', badge: 'ALWAYS PRESENT' },
@@ -444,9 +443,9 @@ export default function Home() {
               { icon: '📍', name: 'address', desc: 'Full street address', badge: 'ALWAYS PRESENT' },
               { icon: '📞', name: 'phone', desc: 'Primary contact number', badge: 'ALWAYS PRESENT' },
               { icon: '🌐', name: 'website', desc: 'Business website URL', badge: 'ALWAYS PRESENT' },
-              { icon: '✉', name: 'email', desc: 'Email from the website (requires proxy)', badge: 'WHEN FOUND' },
+              { icon: '✉', name: 'email', desc: 'Email from website (requires proxy)', badge: 'WHEN FOUND' },
               { icon: '⭐', name: 'rating', desc: 'Average star rating (1-5)', badge: 'ALWAYS PRESENT' },
-              { icon: '💬', name: 'reviews', desc: 'Total Google reviews', badge: 'WHEN AVAILABLE' },
+              { icon: '💬', name: 'reviews', desc: 'Total Google reviews count', badge: 'WHEN AVAILABLE' },
               { icon: '🧭', name: 'latitude', desc: 'GPS latitude', badge: 'ALWAYS PRESENT' },
               { icon: '🧭', name: 'longitude', desc: 'GPS longitude', badge: 'ALWAYS PRESENT' },
             ].map((field, i) => (
@@ -470,7 +469,7 @@ export default function Home() {
                 <tbody>
                   {[
                     { name: 'London Expert Plumbers', c: 'Plumber', a: '14 Baker St, London W1U 6SJ', p: '+44 20 7946 0012', w: 'londonexpertplumbers.co.uk', e: 'info@londonexpert.co.uk', r: '4.9', v: '312' },
-                    { name: 'Capital Fix Plumbing', c: 'Plumber', a: '88 Piccadilly, London W1J 8EG', p: '+44 20 7123 4567', w: 'capitalfixplumbing.com', e: 'hello@capitalfix.com', r: '4.7', v: '198' },
+                    { name: 'Capital Fix Plumbing', c: 'Plumber', a: '88 Piccadilly, London W1J 8EG', p: '+44 20 7123 4567', w: 'capitalfixplumbing.com', e: '—', r: '4.7', v: '198' },
                     { name: 'FastFlow Emergency', c: 'Plumber', a: '22 Victoria St, London SW1H 0NW', p: '+44 20 7654 3210', w: 'fastflowlondon.co.uk', e: '—', r: '4.6', v: '445' },
                     { name: 'TrustMark Pipes & Drains', c: 'Plumber', a: '5 High Holborn, London WC1V 6BZ', p: '+44 20 7890 1234', w: 'trustmarkpipes.co.uk', e: 'contact@trustmarkpipes.co.uk', r: '4.8', v: '267' },
                   ].map((row, i) => (
@@ -499,7 +498,7 @@ export default function Home() {
           <p className="section-sub reveal">LeadMagnet fits naturally into sales, research, and automation workflows.</p>
           <div className="use-grid">
             {[
-              { icon: '🎯', title: 'Sales prospecting', desc: 'Find businesses anywhere — dentists in London, plumbers in Austin — and land in their inbox.', tags: ['outreach', 'cold email', 'CRM'] },
+              { icon: '🎯', title: 'Sales prospecting', desc: 'Find businesses anywhere — dentists in London, plumbers in Austin — and reach them directly.', tags: ['outreach', 'cold email', 'CRM'] },
               { icon: '📊', title: 'Market research', desc: 'Analyze competitors by category and rating across cities. Benchmark and map saturation.', tags: ['competitor analysis', 'density'] },
               { icon: '🏭', title: 'Lead gen agencies', desc: 'Bulk collect local data for clients. Deliver fresh lists on demand.', tags: ['bulk export', 'white-label'] },
               { icon: '🏡', title: 'Real estate & delivery', desc: 'Find service partners or delivery targets in specific zones.', tags: ['partner discovery', 'geo'] },
@@ -518,7 +517,12 @@ export default function Home() {
       {/* STATS */}
       <div className="stats-section">
         <div className="stats-grid">
-          {[{ n: '100', l: 'Leads per run' }, { n: '10', l: 'Data fields per lead' }, { n: '100+', l: 'Countries supported' }, { n: '∞', l: 'Locations worldwide' }].map((s, i) => (
+          {[
+            { n: '100', l: 'Leads per run' },
+            { n: '10', l: 'Data fields per lead' },
+            { n: '100+', l: 'Countries supported' },
+            { n: '∞', l: 'Locations worldwide' },
+          ].map((s, i) => (
             <div className="stat-item" key={i}><div className="stat-num">{s.n}</div><div className="stat-label">{s.l}</div></div>
           ))}
         </div>
@@ -573,7 +577,7 @@ const { items } = await client
   .listItems();
 
 items.forEach(lead => {
-  console.log(lead.name, lead.email);
+  console.log(lead.name, lead.phone);
 });`}</pre>
             </div>
           </div>
@@ -660,7 +664,6 @@ items.forEach(lead => {
             </div>
           )}
 
-          {/* Simulated demo */}
           <div style={{marginTop: 32}}>
             <p style={{fontSize: 13, color: 'var(--muted2)', marginBottom: 12}}>No real data? Try the simulation:</p>
             <button type="button" className="demo-btn" style={{background: 'transparent', border: '1px solid var(--border2)', color: 'var(--text)'}} onClick={runDemo}>▶ Simulate a run</button>
@@ -669,7 +672,7 @@ items.forEach(lead => {
           <div className="demo-progress" id="demo-progress">
             <div className="progress-bar"><div className="progress-fill" id="progress-fill"></div></div>
             <div className="progress-steps">
-              {['Opening Google Maps...', 'Scrolling listings...', 'Extracting data...', 'Finding emails...', 'Exporting CSV...'].map((s, i) => (
+              {['Opening Google Maps...', 'Scrolling listings...', 'Extracting data...', 'Checking for emails...', 'Exporting CSV...'].map((s, i) => (
                 <div className="progress-step active" id={`step-${i + 1}`} key={i}>
                   <div className="step-indicator">{i + 1}</div>
                   <span>{s}</span>

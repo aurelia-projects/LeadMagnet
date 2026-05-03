@@ -2,9 +2,9 @@
 
 > **Free · Open Source · Zero API Keys · No Rate Limits**
 
-Scrape business leads from Google Maps at scale — names, phones, websites, emails, addresses, ratings, reviews, images, coordinates, opening hours, and more. Export to CSV, JSON, Excel, or any CRM. Run on Apify with one click or deploy yourself.
+Scrape business leads from Google Maps at scale — names, phones, websites, addresses, ratings, reviews, coordinates, opening hours, and more. Export to CSV, JSON, Excel, or any CRM. Run on Apify with one click or deploy yourself.
 
-[![Run on Apify](https://img.shields.io/badge/Run_on-Apify-1a73e8)](https://apify.com/aurelia-projects/leadmagnet-scraper)
+[![Run on Apify](https://img.shields.io/badge/Run_on-Apify-1a73e8)](https://apify.com/zakbuildsai/leadmagnet)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 ---
@@ -16,8 +16,8 @@ Scrape business leads from Google Maps at scale — names, phones, websites, ema
 | Engine | ⚡ Playwright (faster, modern) | Puppeteer (older, slower) |
 | API Keys | ❌ None required | ✅ Required |
 | Rate Limits | ❌ None | ⚠️ Strict quotas |
-| Email Extraction | ✅ Included | ❌ Paid add-on |
-| Reviews Scraping | ✅ Full depth | ⚠️ Partial / extra cost |
+| Email Extraction | ⚠️ When available (proxy required) | ❌ Paid add-on |
+| Reviews Scraping | ✅ When available | ⚠️ Partial / extra cost |
 | Price | 💰 Free / Open Source | 💸 Per-request or subscription |
 | Setup | 🟢 One-click on Apify | 🔴 Complex config |
 
@@ -26,10 +26,10 @@ Scrape business leads from Google Maps at scale — names, phones, websites, ema
 ## Quick Start
 
 ### One-Click on Apify
-[Run on Apify](https://apify.com/aurelia-projects/leadmagnet-scraper) — enter a business type and location:
+[Run on Apify](https://apify.com/zakbuildsai/leadmagnet) — enter a business type and location:
 
 ```json
-{ "query": "dentist", "location": "Austin TX", "maxResults": 50, "extractEmails": true }
+{ "query": "dentist", "location": "Austin TX", "maxResults": 50 }
 ```
 
 ### Run Locally
@@ -43,10 +43,10 @@ Open `http://localhost:3000`, enter a business type + location, click Search.
 
 ## What You Can Extract
 
-📛 Business names · 📞 Phone numbers · 🌐 Websites · ✉️ Emails  
-📍 Full addresses · 🗺 GPS coordinates · ⭐ Ratings · 📊 Review count  
-💬 Full reviews (text, dates, profiles) · 🏷 Categories · 💲 Price range  
-🕒 Opening hours · ♿ Amenities (wifi, parking, wheelchair) · 📸 Images  
+📛 Business names · 📞 Phone numbers · 🌐 Websites · ✉️ Emails (when available)
+📍 Full addresses · 🗺 GPS coordinates · ⭐ Ratings · 📊 Review count (when available)
+💬 Full reviews (text, dates, profiles) · 🏷 Categories · 💲 Price range
+🕒 Opening hours · ♿ Amenities (wifi, parking, wheelchair) · 📸 Images
 🔗 Place IDs · 📱 Social profiles (Instagram, Facebook, Twitter)
 
 ---
@@ -69,9 +69,8 @@ POST /run
 |-------|------|
 | Scraper engine | ⚡ Playwright |
 | Runtime | Apify |
-| Frontend | Next.js 16 |
+| Frontend | Next.js |
 | Database | Supabase |
-| AI enrichment | Groq |
 
 ---
 
@@ -81,7 +80,7 @@ POST /run
 - **Agency campaigns** — local business data for clients
 - **Market research** — saturation analysis, service gaps
 - **SEO data mining** — local SEO competitive intelligence
-- **CRM enrichment** — fill missing contacts and emails
+- **CRM enrichment** — fill missing contacts
 - **AI training datasets** — real business listing data
 
 ---
@@ -113,9 +112,9 @@ Full Apify actor documentation → [`actors/leadmagnet-scraper/README.md`](actor
 
 ## Notes
 
-- **Email extraction:** Email scraping is currently unavailable on the Apify free tier (Limited Permissions block external website access). Requires Apify Pro plan or custom proxy configuration. Set to `false` by default in the actor input.
+- **Email extraction:** Requires Apify paid plan with proxy enabled. On the free tier, outbound HTTP to external domains is blocked by LIMITED_PERMISSIONS. Disabled by default.
 
-- **Reviews count:** Extracted from the Google Maps detail page when available. Some businesses may not display their review count depending on the page state.
+- **Reviews count:** Extracted from the Google Maps detail page when available. May be null for some businesses.
 
 ---
 
